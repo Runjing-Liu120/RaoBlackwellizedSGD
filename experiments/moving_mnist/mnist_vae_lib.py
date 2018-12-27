@@ -15,6 +15,7 @@ import timeit
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 import sys
+sys.path.insert(0, '../../../rb_utils/')
 sys.path.insert(0, '../../rb_utils/')
 import rao_blackwellization_lib as rb_lib
 
