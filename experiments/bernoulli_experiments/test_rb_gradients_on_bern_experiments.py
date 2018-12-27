@@ -7,7 +7,10 @@ import torch
 
 import unittest
 
-import partial_marginalization_lib as pm_lib
+import sys
+sys.path.insert(0, '../../rb_utils/')
+import rao_blackwellization_lib as rb_lib
+
 import bernoulli_experiments_lib as bern_lib
 
 import torch.optim as optim
@@ -49,8 +52,8 @@ class TestBernoulliGradients(unittest.TestCase):
         # analytically integrate reinforce gradient
         bern_experiment.set_var_params(deepcopy(phi0))
         optimizer.zero_grad()
-        ps_loss = bern_experiment.get_pm_loss(alpha = 0.0, topk = 8,
-                                                use_baseline = False)
+        ps_loss = bern_experiment.get_pm_loss(topk = 8,
+                                            use_baseline = False)
 
         ps_loss.backward()
         reinforce_analytic_grad = deepcopy(bern_experiment.var_params['phi'].grad)
@@ -58,11 +61,10 @@ class TestBernoulliGradients(unittest.TestCase):
 
         assert reinforce_analytic_grad == true_grad
 
-        # check sampling error
+        # check sampling error of reinforce estimator
         n_samples = 10000
         reinforce_grads = bern_lib.sample_bern_gradient(phi0, bern_experiment,
                                           topk = 0,
-                                          alpha = 0.,
                                           use_baseline = True,
                                           n_samples = n_samples)
 
@@ -74,6 +76,24 @@ class TestBernoulliGradients(unittest.TestCase):
 
         assert np.abs(true_grad.numpy() - mean_reinforce_grad) < \
                         (3 * std_reinforce_grad)
+
+        # check with topk = 3
+        # check sampling error of reinforce estimator
+        n_samples = 10000
+        rb_reinforce_grads = bern_lib.sample_bern_gradient(phi0, bern_experiment,
+                                      topk = 3,
+                                      use_baseline = True,
+                                      n_samples = n_samples)
+
+        mean_rb_reinforce_grad = torch.mean(rb_reinforce_grads).numpy()
+        std_rb_reinforce_grad = (torch.std(rb_reinforce_grads).numpy() / np.sqrt(n_samples))
+
+        print('mean_rb_reinforce_grad, ', mean_rb_reinforce_grad)
+        print('tol ', 3 * std_rb_reinforce_grad)
+
+        assert np.abs(true_grad.numpy() - mean_rb_reinforce_grad) < \
+                        (3 * std_rb_reinforce_grad)
+
 
 # TODO: write a unittest for get_concentrated_mask
 
