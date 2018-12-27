@@ -65,6 +65,9 @@ def train_vae(vae, train_loader, test_loader, optimizer,
                     outfile = './mnist_vae_semisupervised',
                     n_epoch = 200, print_every = 10, save_every = 20):
 
+    batch_losses = []
+    train_losses = []
+    test_losses = []
     # get losses
     train_loss = eval_vae(vae, train_loader, train = False,
                             set_true_loc = set_true_loc)
@@ -73,6 +76,9 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
     print('  * init test recon loss: {:.10g};'.format(test_loss))
+    batch_losses.append(train_loss)
+    train_losses.append(train_loss)
+    test_losses.append(test_loss)
 
     for epoch in range(1, n_epoch + 1):
         start_time = timeit.default_timer()
@@ -88,6 +94,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
         elapsed = timeit.default_timer() - start_time
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\
                     epoch, loss, elapsed))
+        batch_losses.append(loss)
+        np.save(outfile + '_batch_losses', np.array(batch_losses))
 
         if epoch % print_every == 0:
             train_loss = eval_vae(vae, train_loader, train = False,
@@ -97,6 +105,12 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
             print('  * train recon loss: {:.10g};'.format(train_loss))
             print('  * test recon loss: {:.10g};'.format(test_loss))
+
+            train_losses.append(train_loss)
+            test_losses.append(test_loss)
+
+            np.save(outfile + '_train_losses', np.array(train_losses))
+            np.save(outfile + '_test_losses', np.array(test_losses))
 
         if epoch % save_every == 0:
             outfile_every = outfile + '_epoch' + str(epoch)
