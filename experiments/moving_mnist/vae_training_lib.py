@@ -67,11 +67,9 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
     # get losses
     train_loss = eval_vae(vae, train_loader, train = False,
-                            set_true_loc = set_true_loc,
-                            n_samples = 0)
+                            set_true_loc = set_true_loc)
     test_loss = eval_vae(vae, test_loader, train = False,
-                            set_true_loc = set_true_loc,
-                            n_samples = 0)
+                            set_true_loc = set_true_loc)
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
     print('  * init test recon loss: {:.10g};'.format(test_loss))
@@ -93,11 +91,9 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
         if epoch % print_every == 0:
             train_loss = eval_vae(vae, train_loader, train = False,
-                                    set_true_loc = set_true_loc,
-                                    n_samples = 0)
+                                    set_true_loc = set_true_loc)
             test_loss = eval_vae(vae, test_loader, train = False,
-                                    set_true_loc = set_true_loc,
-                                    n_samples = 0)
+                                    set_true_loc = set_true_loc)
 
             print('  * train recon loss: {:.10g};'.format(train_loss))
             print('  * test recon loss: {:.10g};'.format(test_loss))

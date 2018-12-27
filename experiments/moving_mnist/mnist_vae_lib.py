@@ -270,4 +270,4 @@ class MovingHandwritingVAE(nn.Module):
 
         class_weights[seq_tensor, pixel_1d] = 1
 
-        return class_weights / class_weights.sum(1, keepdim = True)
+        return (class_weights / class_weights.sum(1, keepdim = True)).to(device)
