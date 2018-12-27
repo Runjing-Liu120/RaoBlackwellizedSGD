@@ -25,6 +25,7 @@ parser.add_argument('--batch_size', type=int, default=64, metavar='N',
 parser.add_argument('--weight_decay', type = float, default = 1e-5)
 parser.add_argument('--learning_rate', type = float, default = 0.001)
 
+parser.add_argument('--topk', type = int, default = 0)
 
 # whether to use true location
 parser.add_argument('--set_true_loc',
@@ -119,6 +120,7 @@ t0_train = time.time()
 outfile = os.path.join(args.outdir, args.outfilename)
 
 vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
+                topk = args.topk, 
                 set_true_loc = args.set_true_loc,
                 outfile = outfile,
                 n_epoch = args.epochs,
