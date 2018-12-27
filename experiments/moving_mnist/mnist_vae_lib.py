@@ -140,13 +140,13 @@ class PixelAttention(nn.Module):
         self.slen = slen
         self.fc1 = nn.Linear((self.slen - 8)**2, self.slen**2)
 
-        self.softmax = nn.Softmax(dim=1)
+        self.log_softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, image):
         h = self.attn(image)
         h = self.fc1(h)
 
-        return self.softmax(h)
+        return self.log_softmax(h)
 
 class MovingHandwritingVAE(nn.Module):
     def __init__(self, latent_dim = 5,
@@ -231,14 +231,14 @@ class MovingHandwritingVAE(nn.Module):
                         true_pixel_2d = None):
 
         if true_pixel_2d is None:
-            class_weights = self.pixel_attention(image)
-            log_q = torch.log(class_weights)
+            log_class_weights = self.pixel_attention(image)
+            class_weights = torch.exp(log_class_weights)
         else:
             class_weights = self._get_class_weights_from_pixel_2d(true_pixel_2d)
-            log_q = torch.log(class_weights)
+            log_class_weights = torch.log(class_weights)
 
         # kl term
-        kl_pixel_probs = (class_weights * log_q).sum()
+        kl_pixel_probs = (class_weights * log_class_weights).sum()
 
         f_pixel = lambda i : self.get_loss_cond_pixel_1d(image, i) + \
                     kl_pixel_probs
@@ -247,12 +247,13 @@ class MovingHandwritingVAE(nn.Module):
         # TODO: n_samples would be more elegant as an
         # argument to get_partial_marginal_loss
         for k in range(n_samples):
-            pm_loss = rb_lib.get_raoblackwell_ps_loss(f_pixel, log_q, topk,
+            pm_loss = rb_lib.get_raoblackwell_ps_loss(f_pixel,
+                                        log_class_weights, topk,
                                         use_baseline = use_baseline)
 
             avg_pm_loss += pm_loss / n_samples
 
-        map_locations = torch.argmax(log_q.detach(), dim = 1)
+        map_locations = torch.argmax(log_class_weights.detach(), dim = 1)
         map_cond_losses = f_pixel(map_locations).sum()
 
         return avg_pm_loss, map_cond_losses
