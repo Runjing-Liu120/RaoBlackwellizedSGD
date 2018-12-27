@@ -92,8 +92,10 @@ test_loader = torch.utils.data.DataLoader(
 # SET UP VAE
 print('setting up VAE: ')
 vae = mnist_vae_lib.MovingHandwritingVAE()
-vae.mnist_vae.load_state_dict(torch.load(args.vae_init_file,
-                               map_location=lambda storage, loc: storage))
+
+if args.use_vae_init:
+    vae.mnist_vae.load_state_dict(torch.load(args.vae_init_file,
+                                   map_location=lambda storage, loc: storage))
 
 vae.to(device)
 
