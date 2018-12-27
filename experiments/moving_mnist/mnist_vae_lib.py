@@ -233,7 +233,8 @@ class MovingHandwritingVAE(nn.Module):
             class_weights = self.pixel_attention(image)
             log_q = torch.log(class_weights)
         else:
-            log_q = _get_log_class_weights_from_pixel_2d(true_pixel_2d)
+            class_weights = self._get_class_weights_from_pixel_2d(true_pixel_2d)
+            log_q = torch.log(class_weights)
 
         # kl term
         kl_pixel_probs = (class_weights * log_q).sum()
