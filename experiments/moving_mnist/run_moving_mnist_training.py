@@ -44,6 +44,16 @@ parser.add_argument('--propn_sample', type = float,
                     help='proportion of dataset to use',
                     default = 1.0)
 
+# warm start parameters
+parser.add_argument('--use_vae_init',
+                    type=distutils.util.strtobool, default='False',
+                    help='whether to initialize the mnist vae (but not the pixel attn)')
+parser.add_argument('--vae_init_file',
+                    type=str,
+                    help='file to initialize the mnist vae')
+parser.add_argument('--train_attn_only',
+                    type=distutils.util.strtobool, default='False',
+
 # Other params
 parser.add_argument('--seed', type=int, default=4254,
                     help='random seed')
@@ -54,6 +64,9 @@ args = parser.parse_args()
 
 def validate_args():
     assert os.path.exists(args.outdir)
+
+    if use_vae_init:
+        assert os.path.isfile(args.vae_init_file)
 
 validate_args()
 
@@ -79,13 +92,22 @@ test_loader = torch.utils.data.DataLoader(
 # SET UP VAE
 print('setting up VAE: ')
 vae = mnist_vae_lib.MovingHandwritingVAE()
+vae.mnist_vae.load_state_dict(torch.load(args.vae_init_file,
+                               map_location=lambda storage, loc: storage))
+
 vae.to(device)
 
 # set up optimizer
-optimizer = optim.Adam([
-                {'params': vae.parameters(),
-                'lr': args.learning_rate,
-                'weight_decay': args.weight_decay}])
+if args.train_attn_only:
+    optimizer = optim.Adam([
+                    {'params': vae.pixel_attention.parameters(),
+                    'lr': args.learning_rate,
+                    'weight_decay': args.weight_decay}])
+else:
+    optimizer = optim.Adam([
+                    {'params': vae.parameters(),
+                    'lr': args.learning_rate,
+                    'weight_decay': args.weight_decay}])
 
 # TRAIN!
 print('training vae')
