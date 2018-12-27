@@ -52,7 +52,7 @@ parser.add_argument('--vae_init_file',
                     type=str,
                     help='file to initialize the mnist vae')
 parser.add_argument('--train_attn_only',
-                    type=distutils.util.strtobool, default='False',
+                    type=distutils.util.strtobool, default='False')
 
 # Other params
 parser.add_argument('--seed', type=int, default=4254,
@@ -65,7 +65,7 @@ args = parser.parse_args()
 def validate_args():
     assert os.path.exists(args.outdir)
 
-    if use_vae_init:
+    if args.use_vae_init:
         assert os.path.isfile(args.vae_init_file)
 
 validate_args()
