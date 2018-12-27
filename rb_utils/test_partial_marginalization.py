@@ -22,7 +22,7 @@ class TestBernoulliGradients(unittest.TestCase):
         d = 3
         p0 = torch.Tensor([0.6, 0.51, 0.48])
 
-        # phi at which we will evaluate gradit
+        # phi at which we will evaluate gradient
         phi0 = torch.Tensor([2.3])
         phi0.requires_grad_(True)
 
