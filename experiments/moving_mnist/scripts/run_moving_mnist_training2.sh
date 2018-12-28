@@ -7,8 +7,7 @@ python ../run_moving_mnist_training.py \
 			--epochs 50 \
 			--seed 901 \
 			--outdir '../mnist_vae_results/'\
-			--outfilename 'moving_mnist_vae_warm_start_attn_only_topk5' \
+			--outfilename 'moving_mnist_vae_warm_start_attn_only' \
 			--propn_sample 1.0 \
 			--learning_rate 1e-3 \
-			--save_every 10 \
-			--topk 5
+			--save_every 10
