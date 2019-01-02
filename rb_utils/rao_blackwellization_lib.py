@@ -131,7 +131,7 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
 
     if not(topk == class_weights.shape[1]): # i.e. if we didn't sum everything
         # for numerical issues:
-        class_weights_ = class_weights * (1 - concentrated_mask) + 1e-8
+        class_weights_ = (class_weights + 1e-8) * (1 - concentrated_mask) 
         sampled_weight_ = torch.sum(class_weights_, dim = 1, keepdim = True)
 
         # class weights conditioned on being in the diffuse set
