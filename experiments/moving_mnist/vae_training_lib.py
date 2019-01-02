@@ -76,6 +76,11 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
     print('  * init test recon loss: {:.10g};'.format(test_loss))
+
+    outfile_every = outfile + '_epoch' + str(0)
+    print("writing the parameters to " + outfile_every + '\n')
+    torch.save(vae.state_dict(), outfile_every)
+
     batch_losses.append(train_loss)
     train_losses.append(train_loss)
     test_losses.append(test_loss)

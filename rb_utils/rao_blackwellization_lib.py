@@ -128,8 +128,8 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
     # compute sampled term
     sampled_weight = torch.sum(class_weights * (1 - concentrated_mask), dim = 1,
                                 keepdim = True)
-    # assert not np.any(sampled_weight == 0.)
 
+    # assert not np.any(sampled_weight == 0.)
 
     if not(topk == class_weights.shape[1]): # i.e. if we didn't sum everything
         # for numerical issues:
