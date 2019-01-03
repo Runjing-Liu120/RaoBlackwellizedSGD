@@ -27,7 +27,7 @@ def eval_vae(vae, loader, \
 
     avg_loss = 0.0
 
-    num_images = len(loader.dataset)
+    num_images = len(loader.dataset); # print('num images', num_images)
 
     for batch_idx, data in enumerate(loader):
 
@@ -74,8 +74,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
         data_train = d
         break
 
-    images_debugging = data_train['image'][0:10].numpy()
-    np.save('../mnist_vae_results/images_debugging', images_debugging)
+    images_debugging = data_train['image'].to(device)
+    np.save(outfile + 'images_debugging', images_debugging.cpu().numpy())
 
     # get losses
     train_loss = eval_vae(vae, train_loader, train = False,
@@ -87,7 +87,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
     print('  * init test recon loss: {:.10g};'.format(test_loss))
-    print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss))
+    print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss / images_debugging.shape[0]))
 
     outfile_every = outfile + '_epoch' + str(0)
     print("writing the parameters to " + outfile_every + '\n')
@@ -124,7 +124,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
             print('  * train recon loss: {:.10g};'.format(train_loss))
             print('  * test recon loss: {:.10g};'.format(test_loss))
-            print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss))
+            print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss / images_debugging.shape[0]))
 
             train_losses.append(train_loss)
             test_losses.append(test_loss)
