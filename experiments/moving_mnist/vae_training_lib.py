@@ -53,7 +53,7 @@ def eval_vae(vae, loader, \
             pm_loss.backward()
             optimizer.step()
 
-        avg_loss += loss.data  / num_images
+        avg_loss += loss.sum().data  / num_images
 
     return avg_loss
 

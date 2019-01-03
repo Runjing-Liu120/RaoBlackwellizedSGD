@@ -238,7 +238,7 @@ class MovingHandwritingVAE(nn.Module):
             log_class_weights = torch.log(class_weights)
 
         # kl term
-        kl_pixel_probs = (class_weights * log_class_weights).sum()
+        kl_pixel_probs = (class_weights * log_class_weights).sum(dim = 1)
 
         f_pixel = lambda i : self.get_loss_cond_pixel_1d(image, i) + \
                     kl_pixel_probs
@@ -254,7 +254,7 @@ class MovingHandwritingVAE(nn.Module):
             avg_pm_loss += pm_loss / n_samples
 
         map_locations = torch.argmax(log_class_weights.detach(), dim = 1)
-        map_cond_losses = f_pixel(map_locations).sum()
+        map_cond_losses = f_pixel(map_locations)
 
         return avg_pm_loss, map_cond_losses
 
