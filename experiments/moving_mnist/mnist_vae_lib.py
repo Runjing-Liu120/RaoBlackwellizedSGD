@@ -237,7 +237,10 @@ class MovingHandwritingVAE(nn.Module):
             class_weights = self._get_class_weights_from_pixel_2d(true_pixel_2d)
             log_class_weights = torch.log(class_weights)
 
-        f_pixel = lambda i : self.get_loss_cond_pixel_1d(image, i)
+        # kl term
+        kl_pixel_probs = (class_weights * log_class_weights).sum()
+
+        f_pixel = lambda i : self.get_loss_cond_pixel_1d(image, i) + kl_pixel_probs
 
         avg_pm_loss = 0.0
         # TODO: n_samples would be more elegant as an
@@ -252,10 +255,7 @@ class MovingHandwritingVAE(nn.Module):
         map_locations = torch.argmax(log_class_weights.detach(), dim = 1)
         map_cond_losses = f_pixel(map_locations).sum()
 
-        # kl term
-        kl_pixel_probs = (class_weights * log_class_weights).sum()
-
-        return avg_pm_loss + kl_pixel_probs, map_cond_losses + kl_pixel_probs
+        return avg_pm_loss, map_cond_losses
 
     def _pixel_1d_from_2d(self, pixel_2d):
         return pixel_2d[:, 0] * self.full_slen + pixel_2d[:, 1]
