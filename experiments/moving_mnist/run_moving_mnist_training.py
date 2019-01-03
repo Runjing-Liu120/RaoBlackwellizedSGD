@@ -40,6 +40,7 @@ parser.add_argument('--outfilename', type = str,
                     help = 'filename for saving the encoder and decoder')
 parser.add_argument('--save_every', type = int, default = 50,
                     help='save encoder ever how ___ epochs (default = 50)')
+parser.add_argument('--print_every', type = int, default = 10)
 
 # Whether to just work with subset of data
 parser.add_argument('--propn_sample', type = float,
@@ -90,6 +91,7 @@ test_loader = torch.utils.data.DataLoader(
                 dataset=test_set,
                 batch_size=args.batch_size,
                 shuffle=False)
+print('num train: ', len(train_loader.dataset))
 
 # SET UP VAE
 print('setting up VAE: ')
@@ -126,7 +128,7 @@ vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
                 set_true_loc = args.set_true_loc,
                 outfile = outfile,
                 n_epoch = args.epochs,
-                print_every = 10,
+                print_every = args.print_every,
                 save_every = args.save_every)
 
 
