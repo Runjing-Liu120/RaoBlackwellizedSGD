@@ -111,9 +111,12 @@ if args.train_attn_only:
                     'weight_decay': args.weight_decay}])
 else:
     optimizer = optim.Adam([
-                    {'params': vae.parameters(),
-                    'lr': args.learning_rate,
-                    'weight_decay': args.weight_decay}])
+                    {'params': vae.pixel_attention.parameters(),
+                    'lr': 1e-2 * args.learning_rate,
+                    'weight_decay': args.weight_decay}, 
+		{'params': vae.mnist_vae.parameters(), 
+		'lr': args.learning_rate, 
+		'weight_decay': args.weight_decay}])
 
 # TRAIN!
 print('training vae')
