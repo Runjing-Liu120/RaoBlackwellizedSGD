@@ -133,7 +133,6 @@ def train_vae(vae, classifier,
                 train_labeled_only = False,
                 topk = 0, n_samples = 1, use_baseline = True,
                 epochs=10,
-                lr = 3e-04, weight_decay = 1e-5,
                 save_every = 10,
                 print_every = 10,
                 outfile='./ss_mnist'):
