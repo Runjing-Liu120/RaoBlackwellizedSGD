@@ -202,19 +202,19 @@ def train_vae(vae, classifier,
             np.save(outfile + '_test_accuracy', np.array(test_accuracy_array))
 
         if epoch % save_every == 0:
-            outfile_epoch = outfile + 'vae_epoch' + str(epoch)
+            outfile_epoch = outfile + '_vae_epoch' + str(epoch)
             print("writing the vae parameters to " + outfile_epoch + '\n')
             torch.save(vae.state_dict(), outfile_epoch)
 
-            outfile_epoch = outfile + 'classifier_epoch' + str(epoch)
+            outfile_epoch = outfile + '_classifier_epoch' + str(epoch)
             print("writing the classifier parameters to " + outfile_epoch + '\n')
             torch.save(classifier.state_dict(), outfile_epoch)
 
-    outfile_final = outfile + 'vae_final'
+    outfile_final = outfile + '_vae_final'
     print("writing the vae parameters to " + outfile_final + '\n')
     torch.save(vae.state_dict(), outfile_final)
 
-    outfile_final = outfile + 'classifier_final'
+    outfile_final = outfile + '_classifier_final'
     print("writing the classifier parameters to " + outfile_final + '\n')
     torch.save(classifier.state_dict(), outfile_final)
 

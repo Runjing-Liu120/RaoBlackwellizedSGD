@@ -8,7 +8,7 @@ import torch.optim as optim
 
 import torch.nn.functional as F
 
-import mnist_utils
+import vae_utils
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -141,7 +141,7 @@ class MNISTConditionalVAE(nn.Module):
 
     def forward(self, image, z):
 
-        one_hot_z = mnist_utils.get_one_hot_encoding_from_int(z, self.n_classes)
+        one_hot_z = vae_utils.get_one_hot_encoding_from_int(z, self.n_classes)
 
         assert one_hot_z.shape[0] == image.shape[0]
         assert one_hot_z.shape[1] == self.n_classes
