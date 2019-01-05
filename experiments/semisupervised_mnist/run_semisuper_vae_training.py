@@ -1,5 +1,8 @@
 import argparse
 import os
+import distutils.util
+
+import numpy as np
 
 import torch
 
@@ -14,6 +17,7 @@ import semisuper_vae_training_lib as ss_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+parser = argparse.ArgumentParser(description='VAE')
 
 # Training parameters
 parser.add_argument('--epochs', type=int, default=200,
@@ -26,6 +30,10 @@ parser.add_argument('--learning_rate', type = float, default = 0.001)
 
 parser.add_argument('--topk', type = int, default = 0)
 parser.add_argument('--n_samples', type = int, default = 1)
+
+parser.add_argument('--use_baseline',
+                    type=distutils.util.strtobool, default='True',
+                    help='whether to use a baseline for reinforce')
 
 # whether to only train on labeled data
 parser.add_argument('--train_labeled_only',
@@ -73,7 +81,7 @@ _ = torch.manual_seed(args.seed)
 
 # get data
 train_set_labeled, train_set_unlabeled, test_set = \
-    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample)
+    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample, data_dir = '../mnist_data/')
 
 train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,
@@ -103,12 +111,12 @@ vae, classifier = mnist_vae_lib.get_mnist_vae_and_classifier(
 
 # get warm starts
 if args.use_vae_init:
-    assert os.path.isfile(init_vae_file)
+    assert os.path.isfile(args.vae_init_file)
     vae.load_state_dict(torch.load(args.vae_init_file,
                         map_location=lambda storage, loc: storage))
 
 if args.use_classifier_init:
-    assert os.path.isfile(init_classifier_file)
+    assert os.path.isfile(args.classifier_init_file)
     classifier.load_state_dict(torch.load(args.classifier_init_file,
                         map_location=lambda storage, loc: storage))
                         
@@ -123,7 +131,7 @@ optimizer = optim.Adam([
                 weight_decay=args.weight_decay)
 
 # train!
-outifle = args.outdir + args.outfilename
+outfile = args.outdir + args.outfilename
 ss_lib.train_vae(vae, classifier,
                 train_loader_unlabeled,
                 test_loader,
@@ -131,7 +139,7 @@ ss_lib.train_vae(vae, classifier,
                 train_loader_labeled,
                 topk = args.topk,
                 n_samples = args.n_samples,
-                use_baseline = True,
+                use_baseline = args.use_baseline,
                 epochs=args.epochs,
                 outfile = outfile,
                 save_every = args.save_every,
