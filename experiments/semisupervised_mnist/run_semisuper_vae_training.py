@@ -34,6 +34,9 @@ parser.add_argument('--n_samples', type = int, default = 1)
 parser.add_argument('--use_baseline',
                     type=distutils.util.strtobool, default='True',
                     help='whether to use a baseline for reinforce')
+parser.add_argument('--propn_labeled', type = float,
+                    help='proportion of dataset to label',
+                    default = 0.1)
 
 # whether to only train on labeled data
 parser.add_argument('--train_labeled_only',
@@ -81,12 +84,13 @@ _ = torch.manual_seed(args.seed)
 
 # get data
 train_set_labeled, train_set_unlabeled, test_set = \
-    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample, data_dir = '../mnist_data/')
+    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample, data_dir = '../mnist_data/', propn_labeled = args.propn_labeled)
 
 train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,
                  batch_size=args.batch_size,
                  shuffle=True)
+print('num labeled: ', len(train_loader_labeled.sampler))
 
 if args.train_labeled_only:
     train_loader_unlabeled = deepcopy(train_loader_labeled)
@@ -132,7 +136,7 @@ optimizer = optim.Adam([
 
 # train!
 outfile = args.outdir + args.outfilename
-ss_lib.train_vae(vae, classifier,
+ss_lib.train_semisuper_vae(vae, classifier,
                 train_loader_unlabeled,
                 test_loader,
                 optimizer,
