@@ -8,46 +8,19 @@ import time
 import numpy as np
 
 import vae_utils
+from semisuper_vae_training_lib import get_supervised_loss
 
 import sys
 sys.path.insert(0, '../../../rb_utils/')
 sys.path.insert(0, '../../rb_utils/')
-import rao_blackwellization_lib as rb_lib
+import gumbel_softmax_lib as gs_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
-def get_correct_classifier(image, true_labels, n_classes, fudge_factor = 1e-12):
-    # for debugging only: returns q with mass on the correct label
-
-    batch_size = image.shape[0]
-    q = torch.zeros((batch_size, n_classes)) + fudge_factor
-    seq_tensor = torch.LongTensor([i for i in range(batch_size)])
-    q[seq_tensor, true_labels] = 1 - fudge_factor * (n_classes - 1)
-
-    assert np.all((q > 0).detach().numpy())
-
-    return torch.log(q).to(device)
-
-def get_supervised_loss(vae, classifier, labeled_image, true_labels):
-    # get labeled loss
-    labeled_loss = \
-        vae_utils.get_labeled_loss(vae, labeled_image, true_labels)
-
-    # cross entropy term
-    labeled_log_q = classifier.forward(labeled_image)
-
-    cross_entropy = \
-        vae_utils.get_class_label_cross_entropy(labeled_log_q,
-                                true_labels)
-
-    return labeled_loss + cross_entropy
-
-def eval_semisuper_vae(vae, classifier, loader_unlabeled,
+def eval_gumbel_vae(vae, classifier, loader_unlabeled,
+                            annealing_fun = None, init_step = 0,
                             loader_labeled = [None],
                             train = False, optimizer = None,
-                            topk = 0, use_baseline = True,
-                            n_samples = 1,
                             train_labeled_only = False):
 
     if train:
@@ -73,47 +46,44 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
 
             # get labeled portion of loss
             supervised_loss = \
-                get_supervised_loss(vae, classifier, labeled_image, true_labels).sum()
+                get_supervised_loss(vae, classifier, labeled_image, true_labels)
 
             num_labeled = len(loader_labeled.sampler)
-            num_labeled_batch = labeled_image.shape[0]
 
         else:
-            supervised_loss = 0.0
+            supervised_loss = torch.Tensor([0.0])
             num_labeled = 0.0
-            num_labeled_batch = 1.0
 
         # run through classifier
         log_q = classifier.forward(unlabeled_image)
 
         if train:
-
-            train_labeled_only_bool = 1.
-            if train_labeled_only:
-                n_samples = 0
-                train_labeled_only_bool = 0.
-
             # flush gradients
             optimizer.zero_grad()
 
-            # get unlabeled pseudoloss
-            f_z = lambda z : vae_utils.get_labeled_loss(vae, unlabeled_image, z)
-            unlabeled_ps_loss = 0.0
-            for i in range(n_samples):
-                unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
-                                        topk = topk,
-                                        use_baseline = use_baseline)
+            if not train_labeled_only:
+                # get unlabeled pseudoloss
 
-                unlabeled_ps_loss += unlabeled_ps_loss_
+                # sample from gumbel
+                temperature = annealing_fun(init_step)
+                softmax_sample = gs_lib.gumbel_softmax(log_q, temperature)
+                init_step += 1
 
-            unlabeled_ps_loss = unlabeled_ps_loss / max(n_samples, 1)
+                # get loss
+                unlabeled_gumbel_loss =\
+                    vae_utils.get_loss_from_one_hot_label(vae, unlabeled_image,
+                                                    softmax_sample)
 
-            kl_q = torch.sum(torch.exp(log_q) * log_q)
+                kl_q = torch.sum(torch.exp(log_q) * log_q, dim = 1)
+
+                unlabeled_gumbel_loss += kl_q
+
+            else:
+                unlabeled_gumbel_loss = 0.0
 
             total_ps_loss = \
-                (unlabeled_ps_loss + kl_q) * train_labeled_only_bool * \
-                len(loader_unlabeled.sampler) / unlabeled_image.shape[0] + \
-                supervised_loss * num_labeled / labeled_image.shape[0]
+                unlabeled_gumbel_loss.mean() * len(loader_unlabeled.sampler) + \
+                supervised_loss.mean() * num_labeled
 
             # backprop gradients from pseudo loss
             total_ps_loss.backward()
@@ -127,22 +97,21 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
         sum_loss += loss
         num_images += unlabeled_image.shape[0]
 
-    return sum_loss / num_images
+    return sum_loss / num_images, init_step
 
 
-def train_semisuper_vae(vae, classifier,
+def train_gumbel_vae(vae, classifier,
                 train_loader, test_loader,
-                optimizer,
+                optimizer, annealing_fun,
                 loader_labeled = [None],
                 train_labeled_only = False,
-                topk = 0, n_samples = 1, use_baseline = True,
                 epochs=10,
                 save_every = 10,
                 print_every = 10,
                 outfile='./ss_mnist'):
 
     # initial losses
-    init_train_loss = eval_semisuper_vae(vae, classifier, train_loader)
+    init_train_loss = eval_gumbel_vae(vae, classifier, train_loader)[0]
     init_train_accuracy = vae_utils.get_classification_accuracy(classifier, train_loader)
     print('init train loss: {} || init train accuracy: {}'.format(
                 init_train_loss, init_train_accuracy))
@@ -151,7 +120,7 @@ def train_semisuper_vae(vae, classifier,
     batch_losses = [init_train_loss]
     train_accuracy_array = [init_train_accuracy]
 
-    init_test_loss = eval_semisuper_vae(vae, classifier, test_loader)
+    init_test_loss = eval_gumbel_vae(vae, classifier, test_loader)[0]
     init_test_accuracy = vae_utils.get_classification_accuracy(classifier, test_loader)
     print('init test loss: {} || init test accuracy: {}'.format(
                 init_test_loss, init_test_accuracy))
@@ -160,15 +129,15 @@ def train_semisuper_vae(vae, classifier,
     test_accuracy_array = [init_test_accuracy]
 
     epoch_start = 1
+    step = 0
     for epoch in range(epoch_start, epochs+1):
 
         t0 = time.time()
 
-        loss = eval_semisuper_vae(vae, classifier, train_loader,
+        loss, step = eval_gumbel_vae(vae, classifier, train_loader,
+                            annealing_fun = annealing_fun,
+                            init_step = step,
                             loader_labeled = loader_labeled,
-                            topk = topk,
-                            n_samples = n_samples,
-                            use_baseline = use_baseline,
                             train = True,
                             optimizer = optimizer,
                             train_labeled_only = train_labeled_only)
@@ -182,8 +151,8 @@ def train_semisuper_vae(vae, classifier,
         # print stuff
         if epoch % print_every == 0:
             # save the checkpoint.
-            train_loss = eval_semisuper_vae(vae, classifier, train_loader)
-            test_loss = eval_semisuper_vae(vae, classifier, test_loader)
+            train_loss = eval_gumbel_vae(vae, classifier, train_loader)[0]
+            test_loss = eval_gumbel_vae(vae, classifier, test_loader)[0]
 
             print('train loss: {}'.format(train_loss) + \
                     ' || test loss: {}'.format(test_loss))
