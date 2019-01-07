@@ -40,8 +40,10 @@ def get_kl_divergence_loss(mean, logvar):
     return ((mean**2 + logvar.exp() - 1 - logvar) / 2).view(batch_size, -1).sum(dim = 1)
 
 def get_labeled_loss(vae, image, label):
+    one_hot_label = vae.get_one_hot_encoding_from_label(label)
+
     latent_means, latent_std, latent_samples, image_mean = \
-        image_reconstructed = vae(image, label)
+        image_reconstructed = vae(image, one_hot_label)
 
     reconstruction_loss = get_reconstruction_loss(image_mean, image)
     kl_divergence_loss = get_kl_divergence_loss(latent_means, \

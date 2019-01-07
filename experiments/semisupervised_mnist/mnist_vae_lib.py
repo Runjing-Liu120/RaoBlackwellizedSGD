@@ -33,11 +33,13 @@ class MLPEncoder(nn.Module):
         self.fc3 = nn.Linear(128, latent_dim * 2)
 
 
-    def forward(self, image, z):
+    def forward(self, image, one_hot_label):
+        assert one_hot_label.shape[1] == self.n_classes # label should be one hot encoded
+        assert image.shape[0] == one_hot_label.shape[0]
 
         # feed through neural network
         h = image.view(-1, self.n_pixels)
-        h = torch.cat((h, z), dim = 1)
+        h = torch.cat((h, one_hot_label), dim = 1)
 
         h = F.relu(self.fc1(h))
         h = F.relu(self.fc2(h))
@@ -83,7 +85,7 @@ class Classifier(nn.Module):
 
         return self.log_softmax(h)
 
-class MLPConditionalDecoder(nn.Module):
+class MLPDecoder(nn.Module):
     def __init__(self, latent_dim = 5,
                         n_classes = 10,
                         slen = 28):
@@ -91,7 +93,7 @@ class MLPConditionalDecoder(nn.Module):
         # This takes the latent parameters and returns the
         # mean and variance for the image reconstruction
 
-        super(MLPConditionalDecoder, self).__init__()
+        super(MLPDecoder, self).__init__()
 
         # image/model parameters
         self.n_pixels = slen ** 2
@@ -105,12 +107,12 @@ class MLPConditionalDecoder(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, latent_params, z):
+    def forward(self, latent_params, one_hot_label):
         assert latent_params.shape[1] == self.latent_dim
-        assert z.shape[1] == self.n_classes # z should be one hot encoded
-        assert latent_params.shape[0] == z.shape[0]
+        assert one_hot_label.shape[1] == self.n_classes # label should be one hot encoded
+        assert latent_params.shape[0] == one_hot_label.shape[0]
 
-        h = torch.cat((latent_params, z), dim = 1)
+        h = torch.cat((latent_params, one_hot_label), dim = 1)
 
         h = F.relu(self.fc1(h))
         h = F.relu(self.fc2(h))
@@ -122,10 +124,10 @@ class MLPConditionalDecoder(nn.Module):
 
         return image_mean
 
-class MNISTConditionalVAE(nn.Module):
+class MNISTVAE(nn.Module):
 
     def __init__(self, encoder, decoder):
-        super(MNISTConditionalVAE, self).__init__()
+        super(MNISTVAE, self).__init__()
 
         self.encoder = encoder
         self.decoder = decoder
@@ -139,25 +141,26 @@ class MNISTConditionalVAE(nn.Module):
         self.n_classes = self.encoder.n_classes
         self.slen = self.encoder.slen
 
-    def forward(self, image, z):
+    def get_one_hot_encoding_from_label(self, label):
+        return vae_utils.get_one_hot_encoding_from_int(label, self.n_classes)
 
-        one_hot_z = vae_utils.get_one_hot_encoding_from_int(z, self.n_classes)
+    def forward(self, image, one_hot_label):
 
-        assert one_hot_z.shape[0] == image.shape[0]
-        assert one_hot_z.shape[1] == self.n_classes
+        assert one_hot_label.shape[0] == image.shape[0]
+        assert one_hot_label.shape[1] == self.n_classes
 
         # pass through encoder
-        latent_means, latent_std = self.encoder(image, one_hot_z)
+        latent_means, latent_std = self.encoder(image, one_hot_label)
 
         # sample latent dimension
         latent_samples = torch.randn(latent_means.shape).to(device) * \
                             latent_std + latent_means
 
-        assert one_hot_z.shape[0] == latent_samples.shape[0]
-        assert one_hot_z.shape[1] == self.n_classes
+        assert one_hot_label.shape[0] == latent_samples.shape[0]
+        assert one_hot_label.shape[1] == self.n_classes
 
         # pass through decoder
-        image_mean = self.decoder(latent_samples, one_hot_z)
+        image_mean = self.decoder(latent_samples, one_hot_label)
 
         return latent_means, latent_std, latent_samples, image_mean
 
@@ -169,10 +172,10 @@ def get_mnist_vae_and_classifier(latent_dim = 5,
     encoder = MLPEncoder(latent_dim = latent_dim,
                             slen = slen,
                             n_classes = n_classes)
-    decoder = MLPConditionalDecoder(latent_dim = latent_dim,
+    decoder = MLPDecoder(latent_dim = latent_dim,
                                     slen = slen,
                                     n_classes = n_classes)
-    vae = MNISTConditionalVAE(encoder, decoder)
+    vae = MNISTVAE(encoder, decoder)
 
     classifier = Classifier(n_classes = n_classes, slen = slen)
 
