@@ -70,7 +70,7 @@ def eval_gumbel_vae(vae, classifier, loader_unlabeled,
                 init_step += 1
 
                 # get loss
-                unlabeled_gumbel_loss =\
+                unlabeled_gumbel_loss = \
                     vae_utils.get_loss_from_one_hot_label(vae, unlabeled_image,
                                                     softmax_sample)
 
