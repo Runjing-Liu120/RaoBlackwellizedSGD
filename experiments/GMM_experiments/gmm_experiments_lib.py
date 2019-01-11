@@ -174,16 +174,11 @@ class GMMExperiments(object):
 
         return mask.detach()
 
-    def f_z(self, z):
+    def f_one_hot_z(self, one_hot_z):
         centroids = self.var_params['centroids'] #
         log_sigma = torch.log(torch.Tensor([self.true_sigma]))  #
 
-        # print('centroids', centroids)
-        # print('logsigma', log_sigma)
-        # print('log_class_weights', self.log_class_weights)
-
-        centroid_mask = self._get_centroid_mask(z)
-        centroids_masked = torch.matmul(centroid_mask, centroids)
+        centroids_masked = torch.matmul(one_hot_z, centroids)
 
         loglik_z = get_normal_loglik(self.y, centroids_masked, log_sigma).sum(dim = 1)
 
@@ -198,6 +193,12 @@ class GMMExperiments(object):
         # print('loglik', loglik_z)
 
         return - (loglik_z + mu_prior_term + z_prior_term + z_entropy_term)
+
+    def f_z(self, z):
+
+        centroid_mask = self._get_centroid_mask(z)
+
+        return self.f_one_hot_z(centroid_mask)
 
     def get_pm_loss(self, alpha, topk, use_baseline):
         log_q = self.get_log_q()

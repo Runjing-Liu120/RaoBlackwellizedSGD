@@ -13,7 +13,7 @@ from copy import deepcopy
 import mnist_data_lib
 import mnist_vae_lib
 
-import semisuper_vae_training_lib as ss_lib
+import gumbel_training_lib as gum_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -27,16 +27,6 @@ parser.add_argument('--batch_size', type=int, default=64, metavar='N',
 
 parser.add_argument('--weight_decay', type = float, default = 1e-5)
 parser.add_argument('--learning_rate', type = float, default = 0.001)
-
-parser.add_argument('--topk', type = int, default = 0)
-parser.add_argument('--n_samples', type = int, default = 1)
-
-parser.add_argument('--use_baseline',
-                    type=distutils.util.strtobool, default='True',
-                    help='whether to use a baseline for reinforce')
-parser.add_argument('--propn_labeled', type = float,
-                    help='proportion of dataset to label',
-                    default = 0.1)
 
 # whether to only train on labeled data
 parser.add_argument('--train_labeled_only',
@@ -56,6 +46,9 @@ parser.add_argument('--print_every', type = int, default = 10)
 parser.add_argument('--propn_sample', type = float,
                     help='proportion of dataset to use',
                     default = 1.0)
+parser.add_argument('--propn_labeled', type = float,
+                    help='proportion of dataset to label',
+                    default = 0.1)
 
 # warm start parameters
 parser.add_argument('--use_vae_init',
@@ -90,7 +83,6 @@ train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,
                  batch_size=args.batch_size,
                  shuffle=True)
-print('num labeled: ', len(train_loader_labeled.sampler))
 
 if args.train_labeled_only:
     train_loader_unlabeled = deepcopy(train_loader_labeled)
@@ -123,7 +115,7 @@ if args.use_classifier_init:
     assert os.path.isfile(args.classifier_init_file)
     classifier.load_state_dict(torch.load(args.classifier_init_file,
                         map_location=lambda storage, loc: storage))
-                        
+
 vae.to(device)
 classifier.to(device)
 
@@ -134,16 +126,17 @@ optimizer = optim.Adam([
                 {'params': vae.parameters(), 'lr': args.learning_rate}],
                 weight_decay=args.weight_decay)
 
+# set up annealer
+annealing_fun = lambda t : 0.5 # np.maximum(0.5, np.exp(3e-5 * t))
+
 # train!
 outfile = args.outdir + args.outfilename
-ss_lib.train_semisuper_vae(vae, classifier,
+gum_lib.train_gumbel_vae(vae, classifier,
                 train_loader_unlabeled,
                 test_loader,
                 optimizer,
+                annealing_fun,
                 train_loader_labeled,
-                topk = args.topk,
-                n_samples = args.n_samples,
-                use_baseline = args.use_baseline,
                 epochs=args.epochs,
                 outfile = outfile,
                 save_every = args.save_every,

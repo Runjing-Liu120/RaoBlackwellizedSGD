@@ -29,7 +29,7 @@ def get_class_label_cross_entropy(log_class_weights, labels):
 
         return torch.sum(
             -log_class_weights * \
-            get_one_hot_encoding_from_int(labels, n_classes))
+            get_one_hot_encoding_from_int(labels, n_classes), dim = 1)
 
 def get_reconstruction_loss(x_reconstructed, x):
     batch_size = x.shape[0]
@@ -39,12 +39,45 @@ def get_kl_divergence_loss(mean, logvar):
     batch_size = mean.shape[0]
     return ((mean**2 + logvar.exp() - 1 - logvar) / 2).view(batch_size, -1).sum(dim = 1)
 
-def get_labeled_loss(vae, image, label):
+def get_loss_from_one_hot_label(vae, image, one_hot_label):
     latent_means, latent_std, latent_samples, image_mean = \
-        image_reconstructed = vae(image, label)
+        image_reconstructed = vae(image, one_hot_label)
 
     reconstruction_loss = get_reconstruction_loss(image_mean, image)
     kl_divergence_loss = get_kl_divergence_loss(latent_means, \
                                     2 * torch.log(latent_std))
 
     return reconstruction_loss + kl_divergence_loss
+
+def get_labeled_loss(vae, image, label):
+    one_hot_label = vae.get_one_hot_encoding_from_label(label)
+
+    return get_loss_from_one_hot_label(vae, image, one_hot_label)
+
+def get_classification_accuracy_on_batch(classifier, image, label):
+    log_q = classifier(image).detach()
+    z_ind = torch.argmax(log_q, dim = 1)
+
+    return torch.mean((z_ind == label).float())
+
+
+def get_classification_accuracy(classifier, loader,
+                                max_images = np.inf):
+
+    n_images = 0.0
+    accuracy = 0.0
+
+    for batch_idx, data in enumerate(loader):
+        images = data['image'].to(device)
+        labels = data['label'].to(device)
+
+        accuracy += \
+            get_classification_accuracy_on_batch(classifier, images, labels) * \
+                    images.shape[0]
+
+        n_images += images.shape[0]
+
+        if n_images > max_images:
+            break
+
+    return accuracy / n_images
