@@ -46,6 +46,9 @@ parser.add_argument('--print_every', type = int, default = 10)
 parser.add_argument('--propn_sample', type = float,
                     help='proportion of dataset to use',
                     default = 1.0)
+parser.add_argument('--propn_labeled', type = float,
+                    help='proportion of dataset to label',
+                    default = 0.1)
 
 # warm start parameters
 parser.add_argument('--use_vae_init',
@@ -74,7 +77,7 @@ _ = torch.manual_seed(args.seed)
 
 # get data
 train_set_labeled, train_set_unlabeled, test_set = \
-    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample, data_dir = '../mnist_data/')
+    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample, data_dir = '../mnist_data/', propn_labeled = args.propn_labeled)
 
 train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,
@@ -124,7 +127,7 @@ optimizer = optim.Adam([
                 weight_decay=args.weight_decay)
 
 # set up annealer
-annealing_fun = lambda t : np.maximum(0.5, np.exp(3e-5 * t))
+annealing_fun = lambda t : 0.5 # np.maximum(0.5, np.exp(3e-5 * t))
 
 # train!
 outfile = args.outdir + args.outfilename
