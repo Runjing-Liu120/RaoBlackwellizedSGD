@@ -88,7 +88,8 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
 
         # compute gradient estimate
         grad_summed = \
-                grad_estimator(conditional_loss_fun, log_class_weights, \
+                grad_estimator(conditional_loss_fun, log_class_weights,
+                                class_weights, seq_tensor, \
                                 z_sample = summed_indx)
 
         # sum
@@ -120,6 +121,7 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
                     'sampled_weight {}'.format(sampled_weight)
 
         grad_sampled = grad_estimator(conditional_loss_fun, log_class_weights,
+                                class_weights, seq_tensor,
                                 z_sample = conditional_z_sample)
 
     else:
