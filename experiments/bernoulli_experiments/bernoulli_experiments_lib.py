@@ -73,10 +73,10 @@ class BernoulliExperiments(object):
         e_b = sigmoid(self.var_params['phi'])
         return get_bernoulli_log_prob(e_b, self.draw_array[i])
 
-    def get_pm_loss(self, topk, use_baseline):
+    def get_pm_loss(self, topk, grad_estimator):
         log_q = self.get_log_q()
         pm_loss = rb_lib.get_raoblackwell_ps_loss(self.f_z, log_q, topk,
-                                    use_baseline = use_baseline)
+                                    grad_estimator)
 
         return pm_loss
 
@@ -87,7 +87,7 @@ class BernoulliExperiments(object):
 
 
 def sample_bern_gradient(phi0, bern_experiment, topk,
-                            use_baseline = True,
+                            grad_estimator,
                             n_samples = 10000):
     params = [phi0]
     optimizer = optim.SGD(params, lr = 1.0)
@@ -97,7 +97,7 @@ def sample_bern_gradient(phi0, bern_experiment, topk,
     for i in range(n_samples):
         bern_experiment.set_var_params(deepcopy(phi0))
         optimizer.zero_grad()
-        ps_loss = bern_experiment.get_pm_loss(topk = topk, use_baseline = True)
+        ps_loss = bern_experiment.get_pm_loss(topk = topk, grad_estimator = grad_estimator)
         ps_loss.backward()
 
         grad_array[i] = bern_experiment.var_params['phi'].grad
