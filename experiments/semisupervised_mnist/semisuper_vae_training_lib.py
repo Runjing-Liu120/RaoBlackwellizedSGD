@@ -166,6 +166,7 @@ def train_semisuper_vae(vae, classifier,
     test_timing = [t0]
     for epoch in range(epoch_start, epochs+1):
 
+        t0 = time.time()
         loss = eval_semisuper_vae(vae, classifier, train_loader,
                             loader_labeled = loader_labeled,
                             topk = topk,
@@ -175,12 +176,12 @@ def train_semisuper_vae(vae, classifier,
                             optimizer = optimizer,
                             train_labeled_only = train_labeled_only)
 
-        current_time = time.time()
-        elapsed = current_time - batch_timing[epoch - 1]
+        elapsed = time.time() - t0
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\
                     epoch, loss, elapsed))
         batch_losses.append(loss)
-        batch_timing.append(current_time)
+        batch_timing.append(sum(batch_timing) + elapsed)
+
         np.save(outfile + '_batch_losses', np.array(batch_losses))
         np.save(outfile + '_batch_timing', np.array(batch_timing))
 
@@ -212,6 +213,7 @@ def train_semisuper_vae(vae, classifier,
 
             test_timing.append(time.time())
             np.save(outfile + '_test_timing', np.array(test_timing))
+
         if epoch % save_every == 0:
             outfile_epoch = outfile + '_vae_epoch' + str(epoch)
             print("writing the vae parameters to " + outfile_epoch + '\n')
