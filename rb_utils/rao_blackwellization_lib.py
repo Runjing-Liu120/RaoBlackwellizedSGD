@@ -2,7 +2,7 @@ import numpy as np
 
 import torch
 
-from torch.distributions import Categorical
+from baselines_lib import sample_class_weights
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -47,21 +47,8 @@ def get_full_loss(conditional_loss_fun, class_weights):
 
     return full_loss.sum()
 
-def sample_class_weights(class_weights):
-    # draw a sample from Categorical variable with
-    # probabilities class_weights
-
-    cat_rv = Categorical(probs = class_weights)
-    return cat_rv.sample().detach()
-
-def get_reinforce_grad_sample(conditional_loss, log_class_weights,
-                                baseline = 0.0):
-    # computes the REINFORCE gradient estimate
-
-    return (conditional_loss - baseline).detach() * log_class_weights
-
 def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
-                                use_baseline = True):
+                                grad_estimator):
 
     """
     Returns a pseudo_loss, such that the gradient obtained by calling
@@ -77,8 +64,8 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
         A tensor of shape batchsize x n_categories of the log class weights
     topk : Integer
         The number of categories to sum over
-    use_baseline :
-        Whether a baseline will be used to compute the REINFORCE estimator
+    grad_estimator :
+        TODO:
 
     """
 
@@ -86,7 +73,7 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
     assert np.all(log_class_weights.detach().cpu().numpy() <= 0)
     class_weights = torch.exp(log_class_weights.detach())
 
-    # this is the indicator C_\alpha
+    # this is the indicator C_k
     concentrated_mask, topk_domain, seq_tensor = \
         get_concentrated_mask(class_weights, topk)
     concentrated_mask = concentrated_mask.float().detach()
@@ -99,30 +86,15 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
         # get categories to be summed
         summed_indx = topk_domain[:, i]
 
-        # compute loss from those categories
-        conditional_loss_fun_i = conditional_loss_fun(summed_indx)
-        assert len(conditional_loss_fun_i) == log_class_weights.shape[0]
-
-        # get log class_weights
-        log_class_weights_i = log_class_weights[seq_tensor, summed_indx]
-
-        # get baseline
-        if use_baseline:
-            z_sample2 = sample_class_weights(class_weights)
-            baseline = conditional_loss_fun(z_sample2)
-
-        else:
-            baseline = 0.0
-
         # compute gradient estimate
-        reinforce_grad_sample = \
-                get_reinforce_grad_sample(conditional_loss_fun_i,
-                                log_class_weights_i, baseline)
+        grad_summed = \
+                grad_estimator(conditional_loss_fun, log_class_weights, \
+                                z_sample = summed_indx)
 
         # sum
+        summed_weights = class_weights[seq_tensor, summed_indx].squeeze()
         summed_term = summed_term + \
-                        ((reinforce_grad_sample + conditional_loss_fun_i) * \
-                        class_weights[seq_tensor, summed_indx].squeeze()).sum()
+                        (grad_summed * summed_weights).sum()
 
     ############################
     # compute sampled term
@@ -147,27 +119,10 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
         assert np.all((1 - concentrated_mask)[seq_tensor, conditional_z_sample].cpu().numpy() == 1.), \
                     'sampled_weight {}'.format(sampled_weight)
 
-        # compute loss from sampled category
-        conditional_loss_fun_i_sample = conditional_loss_fun(conditional_z_sample)
-        assert len(conditional_loss_fun_i_sample) == log_class_weights.shape[0]
-
-        # get log q
-        log_class_weights_i_sample = \
-            log_class_weights[seq_tensor, conditional_z_sample]
-
-        if use_baseline:
-            z_sample2 = sample_class_weights(class_weights)
-            baseline2 = conditional_loss_fun(z_sample2)
-        else:
-            baseline2 = 0.0
-
-        sampled_term = get_reinforce_grad_sample(\
-                                    conditional_loss_fun_i_sample,
-                                    log_class_weights_i_sample,
-                                    baseline2) + \
-                                    conditional_loss_fun_i_sample
+        grad_sampled = grad_estimator(conditional_loss_fun, log_class_weights,
+                                z_sample = conditional_z_sample)
 
     else:
-        sampled_term = 0.
+        grad_sampled = 0.
 
-    return (sampled_term * sampled_weight.squeeze()).sum() + summed_term
+    return (grad_sampled * sampled_weight.squeeze()).sum() + summed_term

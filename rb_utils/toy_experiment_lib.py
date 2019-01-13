@@ -27,13 +27,13 @@ class ToyExperiment(object):
         if isinstance(z, int):
             z = torch.Tensor([z])
 
-        # return (z.float() - self.eta) ** 2
-        return (z.float() - torch.Tensor([3.])) ** 2
+        return (z.float() - self.eta) ** 2
+        # return (z.float() - torch.Tensor([3.])) ** 2
 
-    def get_pm_loss(self, topk = 0, use_baseline = False):
+    def get_pm_loss(self, topk, grad_estimator):
         log_class_weights = self.get_log_q()
         return rb_lib.get_raoblackwell_ps_loss(self.get_f_z, log_class_weights, topk,
-                                use_baseline)
+                                grad_estimator)
     def get_full_loss(self):
         log_class_weights = self.get_log_q()
         class_weights = torch.exp(log_class_weights)
