@@ -15,6 +15,10 @@ import mnist_vae_lib
 
 import semisuper_vae_training_lib as ss_lib
 
+sys.path.insert(0, '../../../rb_utils/')
+sys.path.insert(0, '../../rb_utils/')
+import baselines_lib as bs_lib
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 parser = argparse.ArgumentParser(description='VAE')
@@ -31,9 +35,9 @@ parser.add_argument('--learning_rate', type = float, default = 0.001)
 parser.add_argument('--topk', type = int, default = 0)
 parser.add_argument('--n_samples', type = int, default = 1)
 
-parser.add_argument('--use_baseline',
-                    type=distutils.util.strtobool, default='True',
-                    help='whether to use a baseline for reinforce')
+parser.add_argument('--grad_estimator',
+                    type=str, default='reinforce',
+                    help='type of gradient estimator. One of reinforce, reinforce_double_bs, ')
 parser.add_argument('--propn_labeled', type = float,
                     help='proportion of dataset to label',
                     default = 0.1)
@@ -84,7 +88,10 @@ _ = torch.manual_seed(args.seed)
 
 # get data
 train_set_labeled, train_set_unlabeled, test_set = \
-    mnist_data_lib.get_mnist_dataset_semisupervised(propn_sample=args.propn_sample, data_dir = '../mnist_data/', propn_labeled = args.propn_labeled)
+    mnist_data_lib.get_mnist_dataset_semisupervised(
+                propn_sample=args.propn_sample,
+                data_dir = '../mnist_data/',
+                propn_labeled = args.propn_labeled)
 
 train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,
@@ -123,7 +130,7 @@ if args.use_classifier_init:
     assert os.path.isfile(args.classifier_init_file)
     classifier.load_state_dict(torch.load(args.classifier_init_file,
                         map_location=lambda storage, loc: storage))
-                        
+
 vae.to(device)
 classifier.to(device)
 
@@ -134,6 +141,14 @@ optimizer = optim.Adam([
                 {'params': vae.parameters(), 'lr': args.learning_rate}],
                 weight_decay=args.weight_decay)
 
+if args.grad_estimator == 'reinforce':
+    grad_estimator = bs_lib.reinforce
+elif: args.grad_estimator == 'reinforce_double_bs':
+    grad_estimator = bs_lib.reinforce_w_double_sample_baseline
+else:
+    print('invalid gradient estimator')
+    raise NotImplementedError
+
 # train!
 outfile = args.outdir + args.outfilename
 ss_lib.train_semisuper_vae(vae, classifier,
@@ -143,7 +158,7 @@ ss_lib.train_semisuper_vae(vae, classifier,
                 train_loader_labeled,
                 topk = args.topk,
                 n_samples = args.n_samples,
-                use_baseline = args.use_baseline,
+                grad_estimator = grad_estimator,
                 epochs=args.epochs,
                 outfile = outfile,
                 save_every = args.save_every,

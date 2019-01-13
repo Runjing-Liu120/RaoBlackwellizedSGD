@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, '../../../rb_utils/')
 sys.path.insert(0, '../../rb_utils/')
 import rao_blackwellization_lib as rb_lib
+import baselines_lib as bs_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -46,7 +47,7 @@ def get_supervised_loss(vae, classifier, labeled_image, true_labels):
 def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                             loader_labeled = [None],
                             train = False, optimizer = None,
-                            topk = 0, use_baseline = True,
+                            topk = 0, grad_estimator = bs_lib.reinforce,
                             n_samples = 1,
                             train_labeled_only = False):
 
@@ -102,7 +103,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             for i in range(n_samples):
                 unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
                                         topk = topk,
-                                        use_baseline = use_baseline)
+                                        grad_estimator = grad_estimator)
 
                 unlabeled_ps_loss += unlabeled_ps_loss_
 
@@ -135,7 +136,7 @@ def train_semisuper_vae(vae, classifier,
                 optimizer,
                 loader_labeled = [None],
                 train_labeled_only = False,
-                topk = 0, n_samples = 1, use_baseline = True,
+                topk = 0, n_samples = 1, grad_estimator = bs_lib.reinforce,
                 epochs=10,
                 save_every = 10,
                 print_every = 10,
@@ -160,24 +161,28 @@ def train_semisuper_vae(vae, classifier,
     test_accuracy_array = [init_test_accuracy]
 
     epoch_start = 1
+    t0 = time.time()
+    batch_timing = [t0]
+    test_timing = [t0]
     for epoch in range(epoch_start, epochs+1):
-
-        t0 = time.time()
 
         loss = eval_semisuper_vae(vae, classifier, train_loader,
                             loader_labeled = loader_labeled,
                             topk = topk,
                             n_samples = n_samples,
-                            use_baseline = use_baseline,
+                            grad_estimator = grad_estimator,
                             train = True,
                             optimizer = optimizer,
                             train_labeled_only = train_labeled_only)
 
-        elapsed = time.time() - t0
+        current_time = time.time()
+        elapsed = current_time - batch_timing[epoch - 1]
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\
                     epoch, loss, elapsed))
         batch_losses.append(loss)
+        batch_timing.append(current_time)
         np.save(outfile + '_batch_losses', np.array(batch_losses))
+        np.save(outfile + '_batch_timing', np.array(batch_timing))
 
         # print stuff
         if epoch % print_every == 0:
@@ -205,6 +210,8 @@ def train_semisuper_vae(vae, classifier,
             np.save(outfile + '_train_accuracy', np.array(train_accuracy_array))
             np.save(outfile + '_test_accuracy', np.array(test_accuracy_array))
 
+            test_timing.append(time.time())
+            np.save(outfile + '_test_timing', np.array(test_timing))
         if epoch % save_every == 0:
             outfile_epoch = outfile + '_vae_epoch' + str(epoch)
             print("writing the vae parameters to " + outfile_epoch + '\n')
