@@ -15,6 +15,7 @@ import mnist_vae_lib
 
 import semisuper_vae_training_lib as ss_lib
 
+import sys
 sys.path.insert(0, '../../../rb_utils/')
 sys.path.insert(0, '../../rb_utils/')
 import baselines_lib as bs_lib
@@ -143,7 +144,7 @@ optimizer = optim.Adam([
 
 if args.grad_estimator == 'reinforce':
     grad_estimator = bs_lib.reinforce
-elif: args.grad_estimator == 'reinforce_double_bs':
+elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline
 else:
     print('invalid gradient estimator')

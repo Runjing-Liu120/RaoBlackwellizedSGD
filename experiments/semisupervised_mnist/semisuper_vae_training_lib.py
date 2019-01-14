@@ -162,7 +162,7 @@ def train_semisuper_vae(vae, classifier,
 
     epoch_start = 1
     t0 = time.time()
-    batch_timing = [t0]
+    batch_timing = [0.0]
     test_timing = [t0]
     for epoch in range(epoch_start, epochs+1):
 
@@ -180,7 +180,7 @@ def train_semisuper_vae(vae, classifier,
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\
                     epoch, loss, elapsed))
         batch_losses.append(loss)
-        batch_timing.append(sum(batch_timing) + elapsed)
+        batch_timing.append(elapsed)
 
         np.save(outfile + '_batch_losses', np.array(batch_losses))
         np.save(outfile + '_batch_timing', np.array(batch_timing))
