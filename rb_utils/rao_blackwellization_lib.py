@@ -2,7 +2,8 @@ import numpy as np
 
 import torch
 
-from baselines_lib import sample_class_weights, get_one_hot_encoding_from_int
+from common_utils import get_one_hot_encoding_from_int
+from baselines_lib import sample_class_weights
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

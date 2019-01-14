@@ -6,22 +6,6 @@ from torch.distributions import Categorical
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def get_one_hot_encoding_from_int(z, n_classes):
-    # z is a sequence of integers in {0, ...., n_classes}
-    #  corresponding to categorires
-    # we return a matrix of shape len(z) x n_classes
-    # corresponding to the one hot encoding of z
-
-    assert (torch.max(z) + 1) <= n_classes
-
-    batch_size = len(z)
-    one_hot_z = torch.zeros((batch_size, n_classes)).to(device)
-
-    for i in range(n_classes):
-        one_hot_z[z == i, i] = 1.
-
-    return one_hot_z
-
 def sample_class_weights(class_weights):
     # draw a sample from Categorical variable with
     # probabilities class_weights
@@ -39,6 +23,10 @@ def get_reinforce_grad_sample(conditional_loss, log_class_weights,
 def reinforce(conditional_loss_fun, log_class_weights,
                 class_weights_detached, seq_tensor,
                 z_sample):
+    # z_sample should be a vector of categories
+
+    # conditional_loss_fun is a function that takes in a one hot encoding
+    # of z and returns the loss
 
     assert len(z_sample) == log_class_weights.shape[0]
 
@@ -77,25 +65,31 @@ def reinforce_w_double_sample_baseline(\
     return get_reinforce_grad_sample(conditional_loss_fun_i,
                     log_class_weights_i, baseline) + conditional_loss_fun_i
 
-def mu_prop(conditional_loss_fun, log_class_weights,
+# def mu_prop(conditional_loss_fun, log_class_weights,
+#             class_weights_detached, seq_tensor, z_sample):
+#     assert len(z_sample) == log_class_weights.shape[0]
+#
+#     # compute loss from those categories
+#     conditional_loss_fun_i = conditional_loss_fun(z_sample)
+#     assert len(conditional_loss_fun_i) == log_class_weights.shape[0]
+#
+#     # get log class_weights
+#     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
+#
+#     # compute baseline with mu_prop
+#     # we will evalute Taylor expansion about z_bar
+#     z_bar = torch.ones(log_class_weights.shape) * 1 / log_class_weights.shape[1]
+#     z_bar.requires_grad_(True)
+#     # get gradient
+#     f_z_bar = conditional_loss_fun(z_bar)
+#
+#     f_z_bar.backwards()
+#     f_grad = z_bar.grad
+#
+#     # get baseline
+#     baseline = f_z_bar + f_grad
+
+def rebar(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample):
-    assert len(z_sample) == log_class_weights.shape[0]
-
-    # compute loss from those categories
-    conditional_loss_fun_i = conditional_loss_fun(z_sample)
-    assert len(conditional_loss_fun_i) == log_class_weights.shape[0]
-
-    # get log class_weights
-    log_class_weights_i = log_class_weights[seq_tensor, z_sample]
-
-    # compute baseline with mu_prop
-    # we will evalute Taylor expansion about z_bar
-    z_bar = torch.ones(log_class_weights.shape) * 1 / log_class_weights.shape[1]
-    z_bar.requires_grad_(True)
-    # get gradient
-    f_z_bar = conditional_loss_fun(z_bar)
-    f_z_bar.backwards()
-    f_grad = z_bar.grad
-
-    # get baseline
-    baseline = f_z_bar + f_grad
+    z_softmax = gumbel_softmax_sample(logits, temperature)
+    _, z_hard = z_softmax.max(dim=-1)
