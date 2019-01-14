@@ -29,13 +29,14 @@ def gumbel_softmax(logits, temperature):
 
 # TODO: test this function
 # used for REBAR, see https://arxiv.org/pdf/1703.07370.pdf
-def gumbel_softmax_conditional_sample(logits, temperature, one_hot_z):
+def gumbel_softmax_conditional_sample(logits, temperature, one_hot_z,
+                                            eps=1e-20):
     U = torch.rand(logits.shape).to(device)
     log_U = torch.log(U + eps)
     log_U_k = (one_hot_z * log_U).sum(dim = -1, keepdim = True)
 
     gumbel_conditional_sample = \
         -torch.log(-log_U_k + \
-                -log_U / (torch.exp(logits) + 1e-12) * (1 - one_hot_z))
+                -log_U / (torch.exp(logits) + eps) * (1 - one_hot_z))
 
     return F.softmax(gumbel_conditional_sample / temperature, dim=-1)

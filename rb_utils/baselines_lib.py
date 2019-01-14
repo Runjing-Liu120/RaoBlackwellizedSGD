@@ -5,6 +5,11 @@ import torch
 from torch.distributions import Categorical
 from common_utils import get_one_hot_encoding_from_int
 
+import torch.nn.functional as F
+
+from gumbel_softmax_lib import gumbel_softmax_sample, \
+    gumbel_softmax_conditional_sample, sample_gumbel
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def sample_class_weights(class_weights):
@@ -96,26 +101,34 @@ def rebar(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             temperature = 1., eta = 1.):
 
+    # sample gumbel
+    gumbel_sample = log_class_weights + sample_gumbel(log_class_weights.size())
+
+    # get hard z
+    _, z_sample = gumbel_sample.max(dim=-1)
     n_classes = log_class_weights.shape[1]
+    z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes)
 
-    # sample z using gumbel reparameterization
-    z_softmax = gumbel_softmax_sample(log_class_weights, temperature)
-    _, z_ind = z_softmax.max(dim=-1)
-    z_one_hot = get_one_hot_encoding_from_int(z_ind, n_classes)
+    # get softmax z
+    z_softmax = F.softmax(gumbel_sample / temperature, dim=-1)
 
-    # log class weights evaluated at sampeld z
-    log_class_weights_i = log_class_weights[seq_tensor, z_ind]
-
-    # conditional softmax term
+    # conditional softmax z
     z_cond_softmax = \
         gumbel_softmax_conditional_sample(log_class_weights, temperature,
                                         z_one_hot)
-    # reinforce term:
-    reinforce_term = (conditional_loss_fun(z_one_hot) - \
-                        eta * conditional_loss_fun(z_cond_softmax)).detach() * \
-                        log_class_weights_i
-    # correction term:
-    correction_term = eta * conditional_loss_fun(z_softmax) - \
-                        eta * conditional_loss_fun(z_cond_softmax)
 
-    return reinforce_term + correction_term
+    # get log class_weights
+    log_class_weights_i = log_class_weights[seq_tensor, z_sample]
+
+    # reinforce term
+    f_z_hard = conditional_loss_fun(z_one_hot)
+    f_z_softmax = conditional_loss_fun(z_softmax)
+    f_z_cond_softmax = conditional_loss_fun(z_cond_softmax)
+
+    reinforce_term = (f_z_hard - eta * f_z_cond_softmax).detach() * \
+                        log_class_weights_i
+
+    # correction term
+    correction_term = eta * f_z_softmax - eta * f_z_cond_softmax
+
+    return reinforce_term + correction_term + f_z_hard
