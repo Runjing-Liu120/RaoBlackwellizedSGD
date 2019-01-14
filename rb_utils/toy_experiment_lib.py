@@ -7,13 +7,13 @@ class ToyExperiment(object):
     def __init__(self, eta, p0):
         # number of categories
         self.k = len(p0)
+        self.seq_tensor = torch.LongTensor([[i for i in range(self.k)]]).float()
 
         self.p0 = p0
 
         # the parameter
         self.set_parameter(eta)
 
-        #
         self.log_softmax = torch.nn.LogSoftmax(dim = 0)
 
     def set_parameter(self, eta):
@@ -24,10 +24,10 @@ class ToyExperiment(object):
         return self.log_softmax(self.eta * self.p0).view(1, self.k)
 
     def get_f_z(self, z):
-        if isinstance(z, int):
-            z = torch.Tensor([z])
+        # if isinstance(z, int):
+        #     z = torch.Tensor([z])
 
-        return (z.float() - self.eta) ** 2
+        return ((z * self.seq_tensor).sum() - self.eta) ** 2
         # return (z.float() - torch.Tensor([3.])) ** 2
 
     def get_pm_loss(self, topk, grad_estimator):

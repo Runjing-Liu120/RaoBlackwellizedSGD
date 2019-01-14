@@ -2,7 +2,7 @@ import numpy as np
 
 import torch
 
-from baselines_lib import sample_class_weights
+from baselines_lib import sample_class_weights, get_one_hot_encoding_from_int
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -40,7 +40,11 @@ def get_full_loss(conditional_loss_fun, class_weights):
 
     for i in range(class_weights.shape[1]):
 
-        conditional_loss = conditional_loss_fun(i)
+        i_rep = torch.ones(class_weights.shape[0]) * i
+        one_hot_i = get_one_hot_encoding_from_int(i_rep,
+                        class_weights.shape[1])
+
+        conditional_loss = conditional_loss_fun(one_hot_i)
         assert len(conditional_loss) == class_weights.shape[0]
 
         full_loss = full_loss + class_weights[:, i] * conditional_loss

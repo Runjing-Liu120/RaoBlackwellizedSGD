@@ -98,7 +98,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             optimizer.zero_grad()
 
             # get unlabeled pseudoloss
-            f_z = lambda z : vae_utils.get_labeled_loss(vae, unlabeled_image, z)
+            f_z = lambda z : vae_utils.get_loss_from_one_hot_label(vae, unlabeled_image, z)
             unlabeled_ps_loss = 0.0
             for i in range(n_samples):
                 unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
