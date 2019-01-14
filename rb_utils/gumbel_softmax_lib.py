@@ -7,7 +7,7 @@ def sample_gumbel(shape, eps=1e-20):
     # samples from gumbel distribution
 
     U = torch.rand(shape).to(device)
-    return torch.log(-torch.log(U + eps) + eps)
+    return -torch.log(-torch.log(U + eps) + eps)
 
 def gumbel_softmax_sample(logits, temperature):
     y = logits + sample_gumbel(logits.size())
@@ -26,3 +26,16 @@ def gumbel_softmax(logits, temperature):
     y_hard = y_hard.view(*shape)
 
     return (y_hard - y).detach() + y
+
+# TODO: test this function
+# used for REBAR, see https://arxiv.org/pdf/1703.07370.pdf
+def gumbel_softmax_conditional_sample(logits, temperature, one_hot_z):
+    U = torch.rand(logits.shape).to(device)
+    log_U = torch.log(U + eps)
+    log_U_k = (one_hot_z * log_U).sum(dim = -1, keepdim = True)
+
+    gumbel_conditional_sample = \
+        -torch.log(-log_U_k + \
+                -log_U / (torch.exp(logits) + 1e-12) * (1 - one_hot_z))
+
+    return F.softmax(gumbel_conditional_sample / temperature, dim=-1)

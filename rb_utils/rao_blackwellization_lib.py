@@ -41,7 +41,7 @@ def get_full_loss(conditional_loss_fun, class_weights):
 
     for i in range(class_weights.shape[1]):
 
-        i_rep = torch.ones(class_weights.shape[0]) * i
+        i_rep = (torch.ones(class_weights.shape[0]) * i).type(torch.LongTensor)
         one_hot_i = get_one_hot_encoding_from_int(i_rep,
                         class_weights.shape[1])
 
@@ -53,7 +53,8 @@ def get_full_loss(conditional_loss_fun, class_weights):
     return full_loss.sum()
 
 def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
-                                grad_estimator):
+                                grad_estimator,
+                    grad_estimator_kwargs = {'grad_estimator_kwargs': None}):
 
     """
     Returns a pseudo_loss, such that the gradient obtained by calling
@@ -95,7 +96,8 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
         grad_summed = \
                 grad_estimator(conditional_loss_fun, log_class_weights,
                                 class_weights, seq_tensor, \
-                                z_sample = summed_indx)
+                                z_sample = summed_indx,
+                                **grad_estimator_kwargs)
 
         # sum
         summed_weights = class_weights[seq_tensor, summed_indx].squeeze()
@@ -127,7 +129,8 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
 
         grad_sampled = grad_estimator(conditional_loss_fun, log_class_weights,
                                 class_weights, seq_tensor,
-                                z_sample = conditional_z_sample)
+                                z_sample = conditional_z_sample,
+                                **grad_estimator_kwargs)
 
     else:
         grad_sampled = 0.
