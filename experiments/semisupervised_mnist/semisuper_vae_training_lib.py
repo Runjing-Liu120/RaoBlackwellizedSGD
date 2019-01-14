@@ -47,7 +47,9 @@ def get_supervised_loss(vae, classifier, labeled_image, true_labels):
 def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                             loader_labeled = [None],
                             train = False, optimizer = None,
-                            topk = 0, grad_estimator = bs_lib.reinforce,
+                            topk = 0,
+                            grad_estimator = bs_lib.reinforce,
+                            grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                             n_samples = 1,
                             train_labeled_only = False):
 
@@ -103,7 +105,8 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             for i in range(n_samples):
                 unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
                                         topk = topk,
-                                        grad_estimator = grad_estimator)
+                                        grad_estimator = grad_estimator,
+                                        grad_estimator_kwargs = grad_estimator_kwargs)
 
                 unlabeled_ps_loss += unlabeled_ps_loss_
 
@@ -136,7 +139,9 @@ def train_semisuper_vae(vae, classifier,
                 optimizer,
                 loader_labeled = [None],
                 train_labeled_only = False,
-                topk = 0, n_samples = 1, grad_estimator = bs_lib.reinforce,
+                topk = 0, n_samples = 1,
+                grad_estimator = bs_lib.reinforce,
+                grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                 epochs=10,
                 save_every = 10,
                 print_every = 10,
@@ -172,6 +177,7 @@ def train_semisuper_vae(vae, classifier,
                             topk = topk,
                             n_samples = n_samples,
                             grad_estimator = grad_estimator,
+                            grad_estimator_kwargs = grad_estimator_kwargs,
                             train = True,
                             optimizer = optimizer,
                             train_labeled_only = train_labeled_only)

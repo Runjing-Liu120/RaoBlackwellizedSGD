@@ -146,6 +146,10 @@ if args.grad_estimator == 'reinforce':
     grad_estimator = bs_lib.reinforce
 elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline
+elif args.grad_estimator == 'rebar':
+    grad_estimator = bs_lib.rebar
+    grad_estimator_kwargs = {'temperature': 0.1,
+                            'eta': 1.}
 else:
     print('invalid gradient estimator')
     raise NotImplementedError
@@ -160,6 +164,7 @@ ss_lib.train_semisuper_vae(vae, classifier,
                 topk = args.topk,
                 n_samples = args.n_samples,
                 grad_estimator = grad_estimator,
+                grad_estimator_kwargs = grad_estimator_kwargs,
                 epochs=args.epochs,
                 outfile = outfile,
                 save_every = args.save_every,
