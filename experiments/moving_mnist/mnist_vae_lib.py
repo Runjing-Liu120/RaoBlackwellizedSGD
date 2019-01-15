@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.distributions import Categorical
+import torch.nn.functional as f
+
 
 import modeling_lib
 import mnist_data_utils
@@ -175,18 +177,45 @@ class MovingHandwritingVAE(nn.Module):
                 np.mgrid[0:self.full_slen, 0:self.full_slen].transpose() - r0).to(device)
 
         # cache meshgrid required for cropping image
-        r = self.mnist_slen // 2
-        self.grid0 = torch.from_numpy(\
-                    np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
+        # r = self.mnist_slen // 2
+        # self.grid0 = torch.from_numpy(\
+        #             np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
 
-    def pad_image(self, image, pixel_2d):
+        self.id_conv_weight = \
+            torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, self.mnist_slen)
+        k = 0
+        for i in range(self.mnist_slen):
+            for j in range(self.mnist_slen):
+                self.id_conv_weight[k, :, i, j] = 1
+                k = k + 1
+
+    def pad_image(self, image, one_hot_pixel):
         return mnist_data_utils.pad_image(image,
                                     pixel_2d,
                                     grid_out = self.grid_out)
 
-    def crop_image(self, image, pixel_2d):
-        return mnist_data_utils.crop_image(image,
-                            pixel_2d, grid0 = self.grid0)
+    def crop_image(self, image, one_hot_pixel):
+
+        batchsize = image.shape[0]
+        id_conv_image = \
+            f.conv2d(image, self.id_conv_weight,
+                        padding = int(self.mnist_slen / 2))
+        # why is there an extra pixel?
+        id_conv_image = id_conv_image[:, :, 0:-1, 0:-1]
+
+        # the first dimension is the batch
+        # the second dimension is the attended image
+        # at each possible attention (3rd dimension)
+        id_conv_image = id_conv_image.contiguous().view(\
+                batchsize, self.mnist_slen**2, self.full_slen**2)
+
+        assert one_hot_pixel.shape[1] == self.full_slen**2
+        assert one_hot_pixel.shape[0] == batchsize
+
+        attended_image = \
+            (id_conv_image * one_hot_pixel.unsqueeze(dim = 1)).sum(dim = 2)
+
+        return attended_image.view(batchsize, self.mnist_slen, self.mnist_slen)
 
     def forward_cond_pixel_1d(self, image, pixel_1d):
         # image should be N x slen x slen
