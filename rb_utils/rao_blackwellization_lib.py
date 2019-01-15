@@ -55,7 +55,8 @@ def get_full_loss(conditional_loss_fun, class_weights):
 def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
                                 grad_estimator,
                                 grad_estimator_kwargs = {'grad_estimator_kwargs': None},
-                                epoch = None):
+                                epoch = None,
+                                data = None):
 
     """
     Returns a pseudo_loss, such that the gradient obtained by calling
@@ -99,6 +100,7 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
                                 class_weights, seq_tensor, \
                                 z_sample = summed_indx,
                                 epoch = epoch,
+                                data = data,
                                 **grad_estimator_kwargs)
 
         # sum
@@ -133,6 +135,7 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
                                 class_weights, seq_tensor,
                                 z_sample = conditional_z_sample,
                                 epoch = epoch,
+                                data = data, 
                                 **grad_estimator_kwargs)
 
     else:
