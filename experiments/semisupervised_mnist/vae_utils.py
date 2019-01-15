@@ -5,21 +5,12 @@ import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def get_one_hot_encoding_from_int(z, n_classes):
-    # z is a sequence of integers in {0, ...., n_classes}
-    #  corresponding to categorires
-    # we return a matrix of shape len(z) x n_classes
-    # corresponding to the one hot encoding of z
+import sys
+sys.path.insert(0, '../../../rb_utils/')
+sys.path.insert(0, '../../rb_utils/')
 
-    assert (torch.max(z) + 1) <= n_classes
+from common_utils import get_one_hot_encoding_from_int
 
-    batch_size = len(z)
-    one_hot_z = torch.zeros((batch_size, n_classes)).to(device)
-
-    for i in range(n_classes):
-        one_hot_z[z == i, i] = 1.
-
-    return one_hot_z
 
 def get_class_label_cross_entropy(log_class_weights, labels):
         assert np.all(log_class_weights.detach().cpu().numpy() <= 0)

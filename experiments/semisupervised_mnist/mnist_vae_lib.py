@@ -10,6 +10,13 @@ import torch.nn.functional as F
 
 import vae_utils
 
+import sys
+sys.path.insert(0, '../../../rb_utils/')
+sys.path.insert(0, '../../rb_utils/')
+
+from common_utils import get_one_hot_encoding_from_int
+
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class MLPEncoder(nn.Module):
@@ -142,7 +149,7 @@ class MNISTVAE(nn.Module):
         self.slen = self.encoder.slen
 
     def get_one_hot_encoding_from_label(self, label):
-        return vae_utils.get_one_hot_encoding_from_int(label, self.n_classes)
+        return get_one_hot_encoding_from_int(label, self.n_classes)
 
     def forward(self, image, one_hot_label):
 
