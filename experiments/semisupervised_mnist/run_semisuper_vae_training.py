@@ -160,7 +160,7 @@ elif args.grad_estimator == 'gumbel':
 elif args.grad_estimator == 'nvil':
     grad_estimator = bs_lib.nvil
     baseline_nn = bs_lib.BaselineNN(slen = slen)
-    grad_estimator_kwargs = {'baseline_nn': baseline_nn}
+    grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
 
     optimizer = optim.Adam([
                     {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
