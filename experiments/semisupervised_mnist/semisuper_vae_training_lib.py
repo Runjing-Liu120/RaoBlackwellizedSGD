@@ -51,7 +51,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                             grad_estimator = bs_lib.reinforce,
                             grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                             n_samples = 1,
-                            train_labeled_only = False):
+                            train_labeled_only = False, epoch = 0):
 
     if train:
         assert optimizer is not None
@@ -105,6 +105,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             for i in range(n_samples):
                 unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
                                         topk = topk,
+                                        epoch = epoch,
                                         grad_estimator = grad_estimator,
                                         grad_estimator_kwargs = grad_estimator_kwargs)
 
@@ -180,7 +181,8 @@ def train_semisuper_vae(vae, classifier,
                             grad_estimator_kwargs = grad_estimator_kwargs,
                             train = True,
                             optimizer = optimizer,
-                            train_labeled_only = train_labeled_only)
+                            train_labeled_only = train_labeled_only,
+                            epoch = epoch)
 
         elapsed = time.time() - t0
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\

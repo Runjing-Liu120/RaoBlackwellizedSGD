@@ -150,6 +150,13 @@ elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     grad_estimator_kwargs = {'temperature': 0.1,
                             'eta': 1.}
+elif args.grad_estimator == 'gumbel':
+    grad_estimator = bs_lib.gumbel
+    grad_estimator_kwargs = {'annealing_fun': lambda t : \
+                        np.maximum(0.5, \
+                        np.exp(-1e-4 * float(t) * \
+                            len(train_loader_labeled.sampler) / args.batch_size))}
+
 else:
     print('invalid gradient estimator')
     raise NotImplementedError
