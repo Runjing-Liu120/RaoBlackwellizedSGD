@@ -1,6 +1,7 @@
 import numpy as np
 
 import torch
+import torch.nn as nn
 
 from torch.distributions import Categorical
 from common_utils import get_one_hot_encoding_from_int
@@ -27,7 +28,7 @@ def get_reinforce_grad_sample(conditional_loss, log_class_weights,
 
 def reinforce(conditional_loss_fun, log_class_weights,
                 class_weights_detached, seq_tensor,
-                z_sample, epoch, grad_estimator_kwargs = None):
+                z_sample, epoch, data, grad_estimator_kwargs = None):
     # z_sample should be a vector of categories
 
     # conditional_loss_fun is a function that takes in a one hot encoding
@@ -50,7 +51,8 @@ def reinforce(conditional_loss_fun, log_class_weights,
 
 def reinforce_w_double_sample_baseline(\
             conditional_loss_fun, log_class_weights,
-            class_weights_detached, seq_tensor, z_sample, epoch,
+            class_weights_detached, seq_tensor, z_sample,
+            epoch, data,
             grad_estimator_kwargs = None):
 
     assert len(z_sample) == log_class_weights.shape[0]
@@ -97,7 +99,8 @@ def reinforce_w_double_sample_baseline(\
 #     baseline = f_z_bar + f_grad
 
 def rebar(conditional_loss_fun, log_class_weights,
-            class_weights_detached, seq_tensor, z_sample, epoch,
+            class_weights_detached, seq_tensor, z_sample,
+            epoch, data,
             temperature = 1., eta = 1.):
 
     # sample gumbel
@@ -134,7 +137,8 @@ def rebar(conditional_loss_fun, log_class_weights,
     return reinforce_term + correction_term + f_z_hard
 
 def gumbel(conditional_loss_fun, log_class_weights,
-            class_weights_detached, seq_tensor, z_sample, epoch,
+            class_weights_detached, seq_tensor, z_sample,
+            epoch, data,
             annealing_fun):
 
     # get temperature
@@ -146,3 +150,56 @@ def gumbel(conditional_loss_fun, log_class_weights,
     f_gumbel = conditional_loss_fun(gumbel_sample)
 
     return f_gumbel
+
+class BaselineNN(nn.Module):
+    def __init__(self, slen = 28):
+        # the encoder returns the mean and variance of the latent parameters
+        # given the image and its class (one hot encoded)
+
+        super(BaselineNN, self).__init__()
+
+        # image / model parameters
+        self.n_pixels = slen ** 2
+        self.slen = slen
+
+        # define the linear layers
+        self.fc1 = nn.Linear(self.n_pixels, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, 1)
+
+
+    def forward(self, image):
+
+        # feed through neural network
+        h = image.view(-1, self.n_pixels)
+
+        h = F.relu(self.fc1(h))
+        h = F.relu(self.fc2(h))
+        h = self.fc3(h)
+
+        return h
+
+
+def nvil(conditional_loss_fun, log_class_weights,
+            class_weights_detached, seq_tensor, z_sample,
+            epoch, data,
+            baseline_nn):
+
+    assert len(z_sample) == log_class_weights.shape[0]
+
+    # compute loss from those categories
+    n_classes = log_class_weights.shape[1]
+    one_hot_z_sample = get_one_hot_encoding_from_int(z_sample, n_classes)
+    conditional_loss_fun_i = conditional_loss_fun(one_hot_z_sample)
+    assert len(conditional_loss_fun_i) == log_class_weights.shape[0]
+
+    # get log class_weights
+    log_class_weights_i = log_class_weights[seq_tensor, z_sample]
+
+    # get baseline
+    baseline = baseline_nn(data)
+
+    return get_reinforce_grad_sample(conditional_loss_fun_i,
+                    log_class_weights_i, baseline = 0.0) + \
+                        conditional_loss_fun_i + \
+                        (conditional_loss_fun_i - baseline)**2

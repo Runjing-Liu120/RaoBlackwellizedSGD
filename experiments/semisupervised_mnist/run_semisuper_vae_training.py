@@ -157,6 +157,17 @@ elif args.grad_estimator == 'gumbel':
                         np.exp(-1e-4 * float(t) * \
                             len(train_loader_labeled.sampler) / args.batch_size))}
 
+elif args.grad_estimator == 'nvil':
+    grad_estimator = bs_lib.nvil
+    baseline_nn = bs_lib.BaselineNN(slen = slen)
+    grad_estimator_kwargs = {'baseline_nn': baseline_nn}
+
+    optimizer = optim.Adam([
+                    {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
+                    {'params': vae.parameters(), 'lr': args.learning_rate},
+                    {'params': baseline_nn.parameters(), 'lr': args.learning_rate}],
+                    weight_decay=args.weight_decay)
+
 else:
     print('invalid gradient estimator')
     raise NotImplementedError

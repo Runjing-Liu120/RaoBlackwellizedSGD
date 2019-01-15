@@ -106,6 +106,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                 unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
                                         topk = topk,
                                         epoch = epoch,
+                                        data = unlabeled_image, 
                                         grad_estimator = grad_estimator,
                                         grad_estimator_kwargs = grad_estimator_kwargs)
 
