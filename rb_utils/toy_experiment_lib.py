@@ -35,7 +35,9 @@ class ToyExperiment(object):
 
         log_class_weights = self.get_log_q()
         return rb_lib.get_raoblackwell_ps_loss(self.get_f_z, log_class_weights, topk,
-                                grad_estimator, grad_estimator_kwargs)
+                                grad_estimator,
+                                grad_estimator_kwargs = grad_estimator_kwargs)
+                                
     def get_full_loss(self):
         log_class_weights = self.get_log_q()
         class_weights = torch.exp(log_class_weights)

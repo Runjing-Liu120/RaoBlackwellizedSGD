@@ -7,8 +7,7 @@ from common_utils import get_one_hot_encoding_from_int
 
 import torch.nn.functional as F
 
-from gumbel_softmax_lib import gumbel_softmax_sample, \
-    gumbel_softmax_conditional_sample, sample_gumbel
+import gumbel_softmax_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -28,7 +27,7 @@ def get_reinforce_grad_sample(conditional_loss, log_class_weights,
 
 def reinforce(conditional_loss_fun, log_class_weights,
                 class_weights_detached, seq_tensor,
-                z_sample, grad_estimator_kwargs = None):
+                z_sample, epoch, grad_estimator_kwargs = None):
     # z_sample should be a vector of categories
 
     # conditional_loss_fun is a function that takes in a one hot encoding
@@ -51,7 +50,7 @@ def reinforce(conditional_loss_fun, log_class_weights,
 
 def reinforce_w_double_sample_baseline(\
             conditional_loss_fun, log_class_weights,
-            class_weights_detached, seq_tensor, z_sample,
+            class_weights_detached, seq_tensor, z_sample, epoch,
             grad_estimator_kwargs = None):
 
     assert len(z_sample) == log_class_weights.shape[0]
@@ -98,11 +97,12 @@ def reinforce_w_double_sample_baseline(\
 #     baseline = f_z_bar + f_grad
 
 def rebar(conditional_loss_fun, log_class_weights,
-            class_weights_detached, seq_tensor, z_sample,
+            class_weights_detached, seq_tensor, z_sample, epoch,
             temperature = 1., eta = 1.):
 
     # sample gumbel
-    gumbel_sample = log_class_weights + sample_gumbel(log_class_weights.size())
+    gumbel_sample = log_class_weights + \
+        gumbel_softmax_lib.sample_gumbel(log_class_weights.size())
 
     # get hard z
     _, z_sample = gumbel_sample.max(dim=-1)
@@ -114,8 +114,8 @@ def rebar(conditional_loss_fun, log_class_weights,
 
     # conditional softmax z
     z_cond_softmax = \
-        gumbel_softmax_conditional_sample(log_class_weights, temperature,
-                                        z_one_hot)
+        gumbel_softmax_lib.gumbel_softmax_conditional_sample(\
+            log_class_weights, temperature, z_one_hot)
 
     # get log class_weights
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
@@ -132,3 +132,17 @@ def rebar(conditional_loss_fun, log_class_weights,
     correction_term = eta * f_z_softmax - eta * f_z_cond_softmax
 
     return reinforce_term + correction_term + f_z_hard
+
+def gumbel(conditional_loss_fun, log_class_weights,
+            class_weights_detached, seq_tensor, z_sample, epoch,
+            annealing_fun):
+
+    # get temperature
+    temperature = annealing_fun(epoch)
+
+    # sample gumbel
+    gumbel_sample = gumbel_softmax_lib.gumbel_softmax(log_class_weights, temperature)
+
+    f_gumbel = conditional_loss_fun(gumbel_sample)
+
+    return f_gumbel
