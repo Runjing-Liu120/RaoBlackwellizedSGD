@@ -143,9 +143,9 @@ optimizer = optim.Adam([
                 weight_decay=args.weight_decay)
 
 if args.grad_estimator == 'reinforce':
-    grad_estimator = bs_lib.reinforce
+    grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'reinforce_double_bs':
-    grad_estimator = bs_lib.reinforce_w_double_sample_baseline
+    grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     grad_estimator_kwargs = {'temperature': 0.1,

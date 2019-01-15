@@ -1,7 +1,7 @@
 #!/bin/bash
 
 python ../run_semisuper_vae_training.py \
-			--epochs 100 \
+			--epochs 50 \
 			--seed 901 \
 			--save_every 20 \
 			--outdir '../mnist_vae_results/'\
