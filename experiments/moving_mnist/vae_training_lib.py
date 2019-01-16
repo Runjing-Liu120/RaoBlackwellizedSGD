@@ -104,7 +104,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
     test_losses.append(test_loss)
 
     t0 = time.time()
-    batch_timing = [0.0]
+    batch_timing = [t0]
     test_timing = [t0]
 
 
@@ -127,7 +127,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
         batch_losses.append(loss)
         np.save(outfile + '_batch_losses', np.array(batch_losses))
 
-        batch_timing.append(elapsed)
+        batch_timing.append(time.time())
         np.save(outfile + '_batch_timing', np.array(batch_timing))
 
         if epoch % print_every == 0:
@@ -151,13 +151,14 @@ def train_vae(vae, train_loader, test_loader, optimizer,
             np.save(outfile + '_train_losses', np.array(train_losses))
             np.save(outfile + '_test_losses', np.array(test_losses))
 
+            test_timing.append(time.time())
+            np.save(outfile + '_test_timing', np.array(test_timing))
+
+
         if epoch % save_every == 0:
             outfile_every = outfile + '_epoch' + str(epoch)
             print("writing the parameters to " + outfile_every + '\n')
             torch.save(vae.state_dict(), outfile_every)
-
-            test_timing.append(time.time())
-            np.save(outfile + '_test_timing', np.array(test_timing))
 
     outfile_final = outfile + '_final'
     print("writing the parameters to " + outfile_final + '\n')
