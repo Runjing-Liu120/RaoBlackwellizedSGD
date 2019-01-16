@@ -26,7 +26,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
                 loader, optimizer):
 
-    num_images = len(loader.dataset)
+    num_images = len(loader.dataset); avg_mse = 0.0
 
     for batch_idx, data in enumerate(loader):
 
@@ -45,9 +45,9 @@ def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
         # get losses
         image_loss = get_conditional_loss(z_sample_one_hot, image)
 
-        baseline = baseline_nn(image)
-        print(image_loss)
-        print(baseline)
+        baseline = baseline_nn(image).squeeze()
+        # print(baseline)
+        # print(image_loss)
         mse = ((image_loss.detach() - baseline)**2).sum()
 
         mse.backward()
@@ -55,7 +55,7 @@ def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
 
         avg_mse += mse / num_images
 
-    return avg_mse
+    return avg_mse, image_loss - baseline
 
 def get_nvil_baseline_nn_warmstart(baseline_nn, vae_init_file, loader, epochs, \
                     outfile = '../mnist_vae_results/baseline_nn_warmstart'):
@@ -68,13 +68,13 @@ def get_nvil_baseline_nn_warmstart(baseline_nn, vae_init_file, loader, epochs, \
 
     optimizer = optim.Adam([
                 {'params': baseline_nn.parameters(),
-                'lr': 1e-5,
+                'lr': 1e-4,
                 'weight_decay': 1e-5}])
 
     for epoch in range(epochs):
-        avg_mse = eval_nvil_baseline_nn(baseline_nn, vae.pixel_attention,
+        avg_mse, baseline = eval_nvil_baseline_nn(baseline_nn, vae.pixel_attention,
                         vae.get_loss_cond_pixel_1d,
-                        loader, optimizer)
+                        loader, optimizer); print(baseline)
 
         print('epoch {}; avg_mse: {}'.format(epoch, avg_mse))
 
@@ -105,5 +105,5 @@ baseline_nn.to(device)
 get_nvil_baseline_nn_warmstart(baseline_nn,
                     vae_init_file = '../mnist_vae_results/moving_mnist_vae_reinforce_final',
                     loader = train_loader,
-                    epochs = 100,
+                    epochs = 20,
                     outfile = '../mnist_vae_results/baseline_nn_warmstart')
