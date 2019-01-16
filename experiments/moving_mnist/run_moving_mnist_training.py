@@ -145,7 +145,8 @@ elif args.grad_estimator == 'gumbel':
 
 elif args.grad_estimator == 'nvil':
     grad_estimator = bs_lib.nvil
-    baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1])
+    baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1]); #baseline_nn.load_state_dict(torch.load('../mnist_vae_results/baseline_nn_warmstart',
+                                   # map_location=lambda storage, loc: storage))
     grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
 
     optimizer = optim.Adam([

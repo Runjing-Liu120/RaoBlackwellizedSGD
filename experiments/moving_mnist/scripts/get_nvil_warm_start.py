@@ -105,5 +105,5 @@ baseline_nn.to(device)
 get_nvil_baseline_nn_warmstart(baseline_nn,
                     vae_init_file = '../mnist_vae_results/moving_mnist_vae_reinforce_final',
                     loader = train_loader,
-                    epochs = 50,
+                    epochs = 20,
                     outfile = '../mnist_vae_results/baseline_nn_warmstart')

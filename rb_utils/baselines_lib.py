@@ -199,7 +199,7 @@ def nvil(conditional_loss_fun, log_class_weights,
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
 
     # get baseline
-    baseline = baseline_nn(data)
+    baseline = baseline_nn(data).squeeze()
 
     return get_reinforce_grad_sample(conditional_loss_fun_i,
                     log_class_weights_i, baseline = baseline) + \
