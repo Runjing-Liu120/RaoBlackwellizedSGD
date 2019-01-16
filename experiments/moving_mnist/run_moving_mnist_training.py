@@ -135,7 +135,7 @@ elif args.grad_estimator == 'reinforce_double_bs':
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     grad_estimator_kwargs = {'temperature': 0.1,
-                            'eta': 1.}
+                            'eta': 0.4}
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
     grad_estimator_kwargs = {'annealing_fun': lambda t : \
