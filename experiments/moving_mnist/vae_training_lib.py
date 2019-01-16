@@ -12,12 +12,14 @@ import timeit
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def eval_vae(vae, loader, \
+                grad_estimator,
+                grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                 optimizer = None,
                 train = False,
                 set_true_loc = False,
                 topk = 0,
-                use_baseline = True,
-                n_samples = 1):
+                n_samples = 1,
+                epoch = 0):
     if train:
         vae.train()
         assert optimizer is not None
@@ -45,7 +47,9 @@ def eval_vae(vae, loader, \
 
         pm_loss, loss = vae.get_rb_loss(image,
                                         topk = topk,
-                                        use_baseline = use_baseline,
+                                        grad_estimator = grad_estimator,
+                                        grad_estimator_kwargs = grad_estimator_kwargs,
+                                        epoch = epoch,
                                         n_samples = n_samples,
                                         true_pixel_2d = true_pixel_2d)
 
@@ -58,9 +62,10 @@ def eval_vae(vae, loader, \
     return avg_loss
 
 def train_vae(vae, train_loader, test_loader, optimizer,
+                    grad_estimator,
+                    grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                     set_true_loc = False,
                     topk = 0,
-                    use_baseline = True,
                     n_samples = 1,
                     outfile = './mnist_vae_semisupervised',
                     n_epoch = 200, print_every = 10, save_every = 20):
@@ -78,11 +83,12 @@ def train_vae(vae, train_loader, test_loader, optimizer,
     np.save(outfile + 'images_debugging', images_debugging.cpu().numpy())
 
     # get losses
-    train_loss = eval_vae(vae, train_loader, train = False,
+    train_loss = eval_vae(vae, train_loader, grad_estimator, train = False,
                             set_true_loc = set_true_loc)
-    test_loss = eval_vae(vae, test_loader, train = False,
+    test_loss = eval_vae(vae, test_loader, grad_estimator, train = False,
                             set_true_loc = set_true_loc)
     _, debugging_images_loss = vae.get_rb_loss(images_debugging,
+                                    grad_estimator, 
                                     n_samples = 0)
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
@@ -105,7 +111,9 @@ def train_vae(vae, train_loader, test_loader, optimizer,
                                 train = True,
                                 set_true_loc = set_true_loc,
                                 topk = topk,
-                                use_baseline = use_baseline,
+                                grad_estimator = grad_estimator,
+                                grad_estimator_kwargs = grad_estimator_kwargs,
+                                epoch = epoch,
                                 n_samples = n_samples)
 
         elapsed = timeit.default_timer() - start_time
@@ -115,11 +123,14 @@ def train_vae(vae, train_loader, test_loader, optimizer,
         np.save(outfile + '_batch_losses', np.array(batch_losses))
 
         if epoch % print_every == 0:
-            train_loss = eval_vae(vae, train_loader, train = False,
+            train_loss = eval_vae(vae, train_loader, grad_estimator,
+                                    train = False,
                                     set_true_loc = set_true_loc)
-            test_loss = eval_vae(vae, test_loader, train = False,
+            test_loss = eval_vae(vae, test_loader, grad_estimator,
+                                    train = False,
                                     set_true_loc = set_true_loc)
             _, debugging_images_loss = vae.get_rb_loss(images_debugging,
+                                            grad_estimator,
                                             n_samples = 0)
 
             print('  * train recon loss: {:.10g};'.format(train_loss))

@@ -66,8 +66,9 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
     ----------
     conditional_loss_fun : function
         A function that returns the loss conditional on an instance of the
-        categorical random variable. It must take in a vector of categorical
-        random variables and return a vector of losses.
+        categorical random variable. It must take in a one-hot-encoding
+        matrix (batchsize x n_categories) and return a vector of
+        losses, one for each observation in the batch. 
     log_class_weights : Tensor
         A tensor of shape batchsize x n_categories of the log class weights
     topk : Integer
@@ -135,7 +136,7 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
                                 class_weights, seq_tensor,
                                 z_sample = conditional_z_sample,
                                 epoch = epoch,
-                                data = data, 
+                                data = data,
                                 **grad_estimator_kwargs)
 
     else:

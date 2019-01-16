@@ -28,6 +28,10 @@ parser.add_argument('--learning_rate', type = float, default = 0.001)
 parser.add_argument('--topk', type = int, default = 0)
 parser.add_argument('--n_samples', type = int, default = 1)
 
+parser.add_argument('--grad_estimator',
+                    type=str, default='reinforce',
+                    help='type of gradient estimator. One of reinforce, reinforce_double_bs, ')
+
 # whether to use true location
 parser.add_argument('--set_true_loc',
                     type=distutils.util.strtobool, default='False')
@@ -113,10 +117,42 @@ else:
     optimizer = optim.Adam([
                     {'params': vae.pixel_attention.parameters(),
                     'lr': args.learning_rate,
-                    'weight_decay': args.weight_decay}, 
-		{'params': vae.mnist_vae.parameters(), 
-		'lr': args.learning_rate, 
+                    'weight_decay': args.weight_decay},
+		{'params': vae.mnist_vae.parameters(),
+		'lr': args.learning_rate,
 		'weight_decay': args.weight_decay}])
+
+### Gradient estimator
+if args.grad_estimator == 'reinforce':
+    grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+elif args.grad_estimator == 'reinforce_double_bs':
+    grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+elif args.grad_estimator == 'rebar':
+    grad_estimator = bs_lib.rebar
+    grad_estimator_kwargs = {'temperature': 0.1,
+                            'eta': 1.}
+elif args.grad_estimator == 'gumbel':
+    grad_estimator = bs_lib.gumbel
+    grad_estimator_kwargs = {'annealing_fun': lambda t : \
+                        np.maximum(0.5, \
+                        np.exp(-1e-4 * float(t) * \
+                            len(train_loader_labeled.sampler) / args.batch_size))}
+
+elif args.grad_estimator == 'nvil':
+    grad_estimator = bs_lib.nvil
+    baseline_nn = bs_lib.BaselineNN(slen = slen)
+    grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
+
+    optimizer = optim.Adam([
+                    {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
+                    {'params': vae.parameters(), 'lr': args.learning_rate},
+                    {'params': baseline_nn.parameters(), 'lr': args.learning_rate}],
+                    weight_decay=args.weight_decay)
+
+else:
+    print('invalid gradient estimator')
+    raise NotImplementedError
+
 
 # TRAIN!
 print('training vae')
@@ -126,6 +162,8 @@ t0_train = time.time()
 outfile = os.path.join(args.outdir, args.outfilename)
 
 vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
+                grad_estimator = grad_estimator,
+                grad_estimator_kwargs = grad_estimator_kwargs,
                 topk = args.topk,
                 n_samples = args.n_samples,
                 set_true_loc = args.set_true_loc,
