@@ -178,9 +178,9 @@ class MovingHandwritingVAE(nn.Module):
                 np.mgrid[0:self.full_slen, 0:self.full_slen].transpose() - r0).to(device)
 
         # cache meshgrid required for cropping image
-        # r = self.mnist_slen // 2
-        # self.grid0 = torch.from_numpy(\
-        #             np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
+        r = self.mnist_slen // 2
+        self.grid0 = torch.from_numpy(\
+                    np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
 
         self.id_conv_weight = \
             torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, self.mnist_slen)
@@ -200,9 +200,14 @@ class MovingHandwritingVAE(nn.Module):
                                     pixel_2d,
                                     grid_out = self.grid_out)
 
-    def crop_image(self, image, one_hot_pixel):
-
+    def cache_id_conv_image(self, image):
         batchsize = image.shape[0]
+        assert len(image.shape) == 4
+
+        assert image.shape[1] == 1
+        assert image.shape[2] == self.full_slen
+        assert image.shape[3] == self.full_slen
+
         id_conv_image = \
             f.conv2d(image, self.id_conv_weight,
                         padding = int(self.mnist_slen / 2))
@@ -212,25 +217,29 @@ class MovingHandwritingVAE(nn.Module):
         # the first dimension is the batch
         # the second dimension is the attended image
         # at each possible attention (3rd dimension)
-        id_conv_image = id_conv_image.contiguous().view(\
+        self.id_conv_image = id_conv_image.contiguous().view(\
                 batchsize, self.mnist_slen**2, self.full_slen**2)
 
+
+    def crop_image(self, one_hot_pixel, image):
+
         assert one_hot_pixel.shape[1] == self.full_slen**2
+
+        if image is not None:
+            self.cache_id_conv_image(image)
+
+        batchsize = self.id_conv_image.shape[0]
         assert one_hot_pixel.shape[0] == batchsize
 
         attended_image = \
-            (id_conv_image * one_hot_pixel.unsqueeze(dim = 1)).sum(dim = 2)
+            (self.id_conv_image * one_hot_pixel.unsqueeze(dim = 1)).sum(dim = 2)
 
         return attended_image.view(batchsize, 1, self.mnist_slen, self.mnist_slen)
 
-    def forward_cond_pixel_1d(self, image, one_hot_pixel):
+    def forward_cond_pixel_1d(self, one_hot_pixel, image):
         # image should be N x slen x slen
-        assert len(image.shape) == 4
-        assert image.shape[1] == 1
-        assert image.shape[2] == self.full_slen
-        assert image.shape[3] == self.full_slen
 
-        image_cropped = self.crop_image(image, one_hot_pixel)
+        image_cropped = self.crop_image(one_hot_pixel, image)
 
         # pass through mnist vae
         recon_mean_cropped, latent_mean, latent_log_std, latent_samples = \
@@ -240,11 +249,16 @@ class MovingHandwritingVAE(nn.Module):
 
         return recon_mean, latent_mean, latent_log_std, latent_samples
 
-    def get_loss_cond_pixel_1d(self, image, one_hot_pixel):
+    def get_loss_cond_pixel_1d(self, one_hot_pixel, image, \
+                                        use_cached_image = False):
 
         # forward
+        if use_cached_image:
+            image_ = None
+        else:
+            image_ = image
         recon_mean, latent_mean, latent_log_std, latent_samples = \
-                        self.forward_cond_pixel_1d(image, one_hot_pixel)
+                        self.forward_cond_pixel_1d(one_hot_pixel, image_)
 
         # kl term
         kl_latent = \
@@ -273,7 +287,8 @@ class MovingHandwritingVAE(nn.Module):
         # kl term
         kl_pixel_probs = (class_weights * log_class_weights).sum()
 
-        f_pixel = lambda i : self.get_loss_cond_pixel_1d(image, i)
+        self.cache_id_conv_image(image)
+        f_pixel = lambda i : self.get_loss_cond_pixel_1d(i, image, use_cached_image = True)
 
         avg_pm_loss = 0.0
         # TODO: n_samples would be more elegant as an
