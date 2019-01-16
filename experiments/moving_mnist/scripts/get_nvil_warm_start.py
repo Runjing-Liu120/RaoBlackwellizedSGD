@@ -26,7 +26,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
                 loader, optimizer):
 
-    num_images = len(loader.dataset)
+    num_images = len(loader.dataset); avg_mse = 0.0
 
     for batch_idx, data in enumerate(loader):
 
