@@ -84,7 +84,7 @@ def pixel_1d_to_2d(sout, padding, pixel_1d):
 
     pixel_2d_row = pixel_1d.div(sout - 2 * padding)
     pixel_2d_col = pixel_1d.remainder(sout - 2 * padding)
-    pixel_2d = torch.stack([pixel_2d_row, pixel_2d_col], dim=1)
+    pixel_2d = torch.stack([pixel_2d_col, pixel_2d_row], dim=1)
 
     return pixel_2d + padding
 

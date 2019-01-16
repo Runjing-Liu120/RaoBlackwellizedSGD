@@ -14,6 +14,11 @@ import vae_training_lib
 import distutils.util
 import argparse
 
+import sys
+sys.path.insert(0, '../../../rb_utils/')
+sys.path.insert(0, '../../rb_utils/')
+import baselines_lib as bs_lib
+
 parser = argparse.ArgumentParser(description='VAE')
 
 # Training parameters
@@ -27,6 +32,10 @@ parser.add_argument('--learning_rate', type = float, default = 0.001)
 
 parser.add_argument('--topk', type = int, default = 0)
 parser.add_argument('--n_samples', type = int, default = 1)
+
+parser.add_argument('--grad_estimator',
+                    type=str, default='reinforce',
+                    help='type of gradient estimator. One of reinforce, reinforce_double_bs, ')
 
 # whether to use true location
 parser.add_argument('--set_true_loc',
@@ -50,7 +59,7 @@ parser.add_argument('--propn_sample', type = float,
 # warm start parameters
 parser.add_argument('--use_vae_init',
                     type=distutils.util.strtobool, default='False',
-                    help='whether to initialize the mnist vae (but not the pixel attn)')
+                    help='whether to initialize the mnist vae')
 parser.add_argument('--vae_init_file',
                     type=str,
                     help='file to initialize the mnist vae')
@@ -113,10 +122,49 @@ else:
     optimizer = optim.Adam([
                     {'params': vae.pixel_attention.parameters(),
                     'lr': args.learning_rate,
-                    'weight_decay': args.weight_decay}, 
-		{'params': vae.mnist_vae.parameters(), 
-		'lr': args.learning_rate, 
+                    'weight_decay': args.weight_decay},
+		{'params': vae.mnist_vae.parameters(),
+		'lr': args.learning_rate,
 		'weight_decay': args.weight_decay}])
+
+### Gradient estimator
+if args.grad_estimator == 'reinforce':
+    grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+elif args.grad_estimator == 'reinforce_double_bs':
+    grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+elif args.grad_estimator == 'rebar':
+    grad_estimator = bs_lib.rebar
+    grad_estimator_kwargs = {'temperature': 0.1,
+                            'eta': 0.4}
+elif args.grad_estimator == 'gumbel':
+    grad_estimator = bs_lib.gumbel
+    grad_estimator_kwargs = {'annealing_fun': lambda t : \
+                        np.maximum(0.5, \
+                        np.exp(-5e-4 * float(t) * \
+                            len(train_loader_labeled.sampler) / args.batch_size))}
+
+elif args.grad_estimator == 'nvil':
+    grad_estimator = bs_lib.nvil
+    baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1]); #baseline_nn.load_state_dict(torch.load('../mnist_vae_results/baseline_nn_warmstart',
+                                   # map_location=lambda storage, loc: storage))
+    grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
+
+    optimizer = optim.Adam([
+                    {'params': vae.pixel_attention.parameters(),
+                    'lr': args.learning_rate,
+                    'weight_decay': args.weight_decay},
+                {'params': vae.mnist_vae.parameters(),
+                'lr': args.learning_rate,
+                'weight_decay': args.weight_decay},
+                {'params': baseline_nn.parameters(),
+                'lr': args.learning_rate,
+                'weight_decay': args.weight_decay}])
+
+
+else:
+    print('invalid gradient estimator')
+    raise NotImplementedError
+
 
 # TRAIN!
 print('training vae')
@@ -126,6 +174,8 @@ t0_train = time.time()
 outfile = os.path.join(args.outdir, args.outfilename)
 
 vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
+                grad_estimator = grad_estimator,
+                grad_estimator_kwargs = grad_estimator_kwargs,
                 topk = args.topk,
                 n_samples = args.n_samples,
                 set_true_loc = args.set_true_loc,

@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.distributions import Categorical
+import torch.nn.functional as f
+
 
 import modeling_lib
 import mnist_data_utils
@@ -18,6 +20,7 @@ import sys
 sys.path.insert(0, '../../../rb_utils/')
 sys.path.insert(0, '../../rb_utils/')
 import rao_blackwellization_lib as rb_lib
+from common_utils import get_one_hot_encoding_from_int
 
 class MLPEncoder(nn.Module):
     def __init__(self, latent_dim = 5,
@@ -163,7 +166,7 @@ class MovingHandwritingVAE(nn.Module):
         self.full_slen = full_slen
 
         self.mnist_vae = HandwritingVAE(latent_dim = self.latent_dim,
-                                        slen = self.mnist_slen + 1)
+                                        slen = self.mnist_slen)
 
         self.pixel_attention = PixelAttention(slen = self.full_slen)
 
@@ -179,41 +182,83 @@ class MovingHandwritingVAE(nn.Module):
         self.grid0 = torch.from_numpy(\
                     np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
 
-    def pad_image(self, image, pixel_2d):
-        return mnist_data_utils.pad_image(image,
-                                    pixel_2d,
-                                    grid_out = self.grid_out)
+        self.id_conv_weight = \
+            torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, self.mnist_slen).to(device)
+        k = 0
+        for i in range(self.mnist_slen):
+            for j in range(self.mnist_slen):
+                self.id_conv_weight[k, :, i, j] = 1
+                k = k + 1
 
-    def crop_image(self, image, pixel_2d):
-        return mnist_data_utils.crop_image(image,
-                            pixel_2d, grid0 = self.grid0)
-
-    def forward_cond_pixel_1d(self, image, pixel_1d):
-        # image should be N x slen x slen
-        assert len(image.shape) == 4
-        assert image.shape[1] == 1
-        assert image.shape[2] == self.full_slen
-        assert image.shape[3] == self.full_slen
-
+    def pad_image(self, image, one_hot_pixel):
+        pixel_1d = torch.argmax(one_hot_pixel, dim = 1).squeeze()
         pixel_2d = mnist_data_utils.pixel_1d_to_2d(self.full_slen,
                                     padding = 0,
                                     pixel_1d = pixel_1d)
 
-        image_cropped = self.crop_image(image, pixel_2d)
+        return mnist_data_utils.pad_image(image,
+                                    pixel_2d,
+                                    grid_out = self.grid_out)
+
+    def cache_id_conv_image(self, image):
+        batchsize = image.shape[0]
+        assert len(image.shape) == 4
+
+        assert image.shape[1] == 1
+        assert image.shape[2] == self.full_slen
+        assert image.shape[3] == self.full_slen
+
+        id_conv_image = \
+            f.conv2d(image, self.id_conv_weight,
+                        padding = int(self.mnist_slen / 2))
+        # why is there an extra pixel?
+        id_conv_image = id_conv_image[:, :, 0:-1, 0:-1]
+
+        # the first dimension is the batch
+        # the second dimension is the attended image
+        # at each possible attention (3rd dimension)
+        self.id_conv_image = id_conv_image.contiguous().view(\
+                batchsize, self.mnist_slen**2, self.full_slen**2)
+
+
+    def crop_image(self, one_hot_pixel, image):
+
+        assert one_hot_pixel.shape[1] == self.full_slen**2
+
+        if image is not None:
+            self.cache_id_conv_image(image)
+
+        batchsize = self.id_conv_image.shape[0]
+        assert one_hot_pixel.shape[0] == batchsize
+
+        attended_image = \
+            (self.id_conv_image * one_hot_pixel.unsqueeze(dim = 1)).sum(dim = 2)
+
+        return attended_image.view(batchsize, 1, self.mnist_slen, self.mnist_slen)
+
+    def forward_cond_pixel_1d(self, one_hot_pixel, image):
+        # image should be N x slen x slen
+
+        image_cropped = self.crop_image(one_hot_pixel, image)
 
         # pass through mnist vae
         recon_mean_cropped, latent_mean, latent_log_std, latent_samples = \
             self.mnist_vae(image_cropped)
 
-        recon_mean = self.pad_image(recon_mean_cropped, pixel_2d)
+        recon_mean = self.pad_image(recon_mean_cropped, one_hot_pixel)
 
-        return recon_mean, latent_mean, latent_log_std, latent_samples, pixel_2d
+        return recon_mean, latent_mean, latent_log_std, latent_samples
 
-    def get_loss_cond_pixel_1d(self, image, pixel_1d):
+    def get_loss_cond_pixel_1d(self, one_hot_pixel, image, \
+                                        use_cached_image = False):
 
         # forward
-        recon_mean, latent_mean, latent_log_std, latent_samples, pixel_2d = \
-                        self.forward_cond_pixel_1d(image, pixel_1d)
+        if use_cached_image:
+            image_ = None
+        else:
+            image_ = image
+        recon_mean, latent_mean, latent_log_std, latent_samples = \
+                        self.forward_cond_pixel_1d(one_hot_pixel, image_)
 
         # kl term
         kl_latent = \
@@ -225,8 +270,10 @@ class MovingHandwritingVAE(nn.Module):
         return -loglik + kl_latent
 
     def get_rb_loss(self, image,
+                        grad_estimator,
+                        grad_estimator_kwargs = {'grad_estimator_kwargs': None},
+                        epoch = None,
                         topk = 0,
-                        use_baseline = True,
                         n_samples = 1,
                         true_pixel_2d = None):
 
@@ -240,7 +287,8 @@ class MovingHandwritingVAE(nn.Module):
         # kl term
         kl_pixel_probs = (class_weights * log_class_weights).sum()
 
-        f_pixel = lambda i : self.get_loss_cond_pixel_1d(image, i)
+        self.cache_id_conv_image(image)
+        f_pixel = lambda i : self.get_loss_cond_pixel_1d(i, image, use_cached_image = True)
 
         avg_pm_loss = 0.0
         # TODO: n_samples would be more elegant as an
@@ -248,17 +296,21 @@ class MovingHandwritingVAE(nn.Module):
         for k in range(n_samples):
             pm_loss = rb_lib.get_raoblackwell_ps_loss(f_pixel,
                                         log_class_weights, topk,
-                                        use_baseline = use_baseline)
+                                        grad_estimator,
+                                        grad_estimator_kwargs,
+                                        epoch,
+                                        data = image)
 
             avg_pm_loss += pm_loss / n_samples
 
         map_locations = torch.argmax(log_class_weights.detach(), dim = 1)
-        map_cond_losses = f_pixel(map_locations).sum()
+        one_hot_map_locations = get_one_hot_encoding_from_int(map_locations, self.full_slen**2)
+        map_cond_losses = f_pixel(one_hot_map_locations).sum()
 
         return avg_pm_loss + image.shape[0] * kl_pixel_probs, map_cond_losses
 
     def _pixel_1d_from_2d(self, pixel_2d):
-        return pixel_2d[:, 0] * self.full_slen + pixel_2d[:, 1]
+        return pixel_2d[:, 1] * self.full_slen + pixel_2d[:, 0]
 
     def _get_class_weights_from_pixel_2d(self, pixel_2d):
 

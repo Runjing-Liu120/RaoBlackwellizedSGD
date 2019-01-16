@@ -124,7 +124,7 @@ def rebar(conditional_loss_fun, log_class_weights,
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
 
     # reinforce term
-    f_z_hard = conditional_loss_fun(z_one_hot)
+    f_z_hard = conditional_loss_fun(z_one_hot.detach())
     f_z_softmax = conditional_loss_fun(z_softmax)
     f_z_cond_softmax = conditional_loss_fun(z_cond_softmax)
 
@@ -163,9 +163,10 @@ class BaselineNN(nn.Module):
         self.slen = slen
 
         # define the linear layers
-        self.fc1 = nn.Linear(self.n_pixels, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc3 = nn.Linear(128, 1)
+        self.fc1 = nn.Linear(self.n_pixels, 512)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 512)
+        self.fc4 = nn.Linear(512, 1)
 
 
     def forward(self, image):
@@ -175,7 +176,8 @@ class BaselineNN(nn.Module):
 
         h = F.relu(self.fc1(h))
         h = F.relu(self.fc2(h))
-        h = self.fc3(h)
+        h = F.relu(self.fc3(h))
+        h = self.fc4(h)
 
         return h
 
@@ -197,9 +199,9 @@ def nvil(conditional_loss_fun, log_class_weights,
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
 
     # get baseline
-    baseline = baseline_nn(data)
+    baseline = baseline_nn(data).squeeze()
 
     return get_reinforce_grad_sample(conditional_loss_fun_i,
-                    log_class_weights_i, baseline = 0.0) + \
+                    log_class_weights_i, baseline = baseline) + \
                         conditional_loss_fun_i + \
-                        (conditional_loss_fun_i - baseline)**2
+                        (conditional_loss_fun_i.detach() - baseline)**2
