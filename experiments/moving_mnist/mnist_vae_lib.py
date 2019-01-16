@@ -183,7 +183,7 @@ class MovingHandwritingVAE(nn.Module):
                     np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
 
         self.id_conv_weight = \
-            torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, self.mnist_slen)
+            torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, self.mnist_slen).to(device)
         k = 0
         for i in range(self.mnist_slen):
             for j in range(self.mnist_slen):
