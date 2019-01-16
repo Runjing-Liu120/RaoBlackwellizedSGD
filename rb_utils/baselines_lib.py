@@ -200,6 +200,6 @@ def nvil(conditional_loss_fun, log_class_weights,
     baseline = baseline_nn(data)
 
     return get_reinforce_grad_sample(conditional_loss_fun_i,
-                    log_class_weights_i, baseline = 0.0) + \
+                    log_class_weights_i, baseline = baseline) + \
                         conditional_loss_fun_i + \
-                        (conditional_loss_fun_i - baseline)**2
+                        (conditional_loss_fun_i.detach() - baseline)**2
