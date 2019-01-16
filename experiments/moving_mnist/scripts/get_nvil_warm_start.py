@@ -9,6 +9,18 @@ from torch.distributions import Categorical
 
 import timeit
 
+import sys 
+sys.path.insert(0, '../')
+import mnist_data_utils
+import mnist_vae_lib
+import vae_training_lib
+
+
+sys.path.insert(0, '../../../rb_utils/')
+sys.path.insert(0, '../../rb_utils/')
+import baselines_lib as bs_lib
+import common_utils
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
@@ -28,7 +40,7 @@ def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
 
         # sample
         z_sample = bs_lib.sample_class_weights(class_weights)
-        z_sample_one_hot = common_utils.get_one_hot_encoding_from_int(z_sample)
+        z_sample_one_hot = common_utils.get_one_hot_encoding_from_int(z_sample, class_weights.shape[1])
 
         # get losses
         image_loss = get_conditional_loss(z_sample_one_hot, image)
@@ -38,22 +50,22 @@ def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
         mse.backward()
         optimizer.step()
 
-        avg_mse = mse / num_images
+        avg_mse += mse / num_images
 
     return avg_mse
 
-def get_nvil_baseline_nn_warmstart(baseline_nn, vae_init_file, loader, epochs,
+def get_nvil_baseline_nn_warmstart(baseline_nn, vae_init_file, loader, epochs, \
                     outfile = '../mnist_vae_results/baseline_nn_warmstart'):
 
     vae = mnist_vae_lib.MovingHandwritingVAE()
 
     print('using vae from ', vae_init_file)
     vae.load_state_dict(torch.load(vae_init_file,
-                                   map_location=lambda storage, loc: storage))
+                                   map_location=lambda storage, loc: storage)); vae.to(device); vae.eval()
 
     optimizer = optim.Adam([
                 {'params': baseline_nn.parameters(),
-                'lr': 1e-2,
+                'lr': 1e-5,
                 'weight_decay': 1e-5}])
 
     for epoch in range(epochs):
@@ -85,8 +97,10 @@ train_loader = torch.utils.data.DataLoader(
 grad_estimator = bs_lib.nvil
 baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1])
 
+baseline_nn.to(device)
+
 get_nvil_baseline_nn_warmstart(baseline_nn,
                     vae_init_file = '../mnist_vae_results/moving_mnist_vae_reinforce_final',
                     loader = train_loader,
                     epochs = 100,
-                    outfile = '../mnist_vae_results/baseline_nn_warmstart'):
+                    outfile = '../mnist_vae_results/baseline_nn_warmstart')

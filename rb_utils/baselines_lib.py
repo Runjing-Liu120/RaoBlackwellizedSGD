@@ -163,9 +163,9 @@ class BaselineNN(nn.Module):
         self.slen = slen
 
         # define the linear layers
-        self.fc1 = nn.Linear(self.n_pixels, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc3 = nn.Linear(128, 1)
+        self.fc1 = nn.Linear(self.n_pixels, 512)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 1)
 
 
     def forward(self, image):
