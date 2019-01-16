@@ -104,7 +104,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
     test_losses.append(test_loss)
 
     t0 = time.time()
-    batch_timing = [t0]
+    batch_timing = [0.]
     test_timing = [t0]
 
 
@@ -127,7 +127,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
         batch_losses.append(loss)
         np.save(outfile + '_batch_losses', np.array(batch_losses))
 
-        batch_timing.append(time.time())
+        batch_timing.append(elapsed)
         np.save(outfile + '_batch_timing', np.array(batch_timing))
 
         if epoch % print_every == 0:
