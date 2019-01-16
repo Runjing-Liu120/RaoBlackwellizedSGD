@@ -140,7 +140,7 @@ elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
     grad_estimator_kwargs = {'annealing_fun': lambda t : \
                         np.maximum(0.5, \
-                        np.exp(-1e-4 * float(t) * \
+                        np.exp(-5e-4 * float(t) * \
                             len(train_loader_labeled.sampler) / args.batch_size))}
 
 elif args.grad_estimator == 'nvil':
