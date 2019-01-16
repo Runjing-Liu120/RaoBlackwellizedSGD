@@ -124,7 +124,7 @@ def rebar(conditional_loss_fun, log_class_weights,
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
 
     # reinforce term
-    f_z_hard = conditional_loss_fun(z_one_hot)
+    f_z_hard = conditional_loss_fun(z_one_hot.detach())
     f_z_softmax = conditional_loss_fun(z_softmax)
     f_z_cond_softmax = conditional_loss_fun(z_cond_softmax)
 
