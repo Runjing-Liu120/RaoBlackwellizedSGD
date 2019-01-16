@@ -9,7 +9,7 @@ from torch.distributions import Categorical
 
 import timeit
 
-import sys 
+import sys
 sys.path.insert(0, '../')
 import mnist_data_utils
 import mnist_vae_lib
@@ -45,7 +45,10 @@ def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
         # get losses
         image_loss = get_conditional_loss(z_sample_one_hot, image)
 
-        mse = ((image_loss.detach() - baseline_nn(image))**2).sum()
+        baseline = baseline_nn(image)
+        print(baseline)
+        print(image_loss)
+        mse = ((image_loss.detach() - baseline)**2).sum()
 
         mse.backward()
         optimizer.step()
