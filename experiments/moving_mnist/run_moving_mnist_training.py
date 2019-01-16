@@ -14,6 +14,11 @@ import vae_training_lib
 import distutils.util
 import argparse
 
+import sys
+sys.path.insert(0, '../../../rb_utils/')
+sys.path.insert(0, '../../rb_utils/')
+import baselines_lib as bs_lib
+
 parser = argparse.ArgumentParser(description='VAE')
 
 # Training parameters
