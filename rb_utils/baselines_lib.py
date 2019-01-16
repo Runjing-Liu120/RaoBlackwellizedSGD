@@ -165,7 +165,8 @@ class BaselineNN(nn.Module):
         # define the linear layers
         self.fc1 = nn.Linear(self.n_pixels, 512)
         self.fc2 = nn.Linear(512, 512)
-        self.fc3 = nn.Linear(512, 1)
+        self.fc3 = nn.Linear(512, 512)
+        self.fc4 = nn.Linear(512, 1)
 
 
     def forward(self, image):
@@ -175,7 +176,8 @@ class BaselineNN(nn.Module):
 
         h = F.relu(self.fc1(h))
         h = F.relu(self.fc2(h))
-        h = self.fc3(h)
+        h = F.relu(self.fc3(h))
+        h = self.fc4(h)
 
         return h
 
