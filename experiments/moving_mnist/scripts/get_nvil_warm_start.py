@@ -46,8 +46,8 @@ def eval_nvil_baseline_nn(baseline_nn, get_log_q, get_conditional_loss,
         image_loss = get_conditional_loss(z_sample_one_hot, image)
 
         baseline = baseline_nn(image)
-        print(baseline)
         print(image_loss)
+        print(baseline)
         mse = ((image_loss.detach() - baseline)**2).sum()
 
         mse.backward()
