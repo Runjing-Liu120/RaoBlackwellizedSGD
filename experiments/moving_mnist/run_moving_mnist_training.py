@@ -149,10 +149,16 @@ elif args.grad_estimator == 'nvil':
     grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
 
     optimizer = optim.Adam([
-                    {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
-                    {'params': vae.parameters(), 'lr': args.learning_rate},
-                    {'params': baseline_nn.parameters(), 'lr': args.learning_rate}],
-                    weight_decay=args.weight_decay)
+                    {'params': vae.pixel_attention.parameters(),
+                    'lr': args.learning_rate,
+                    'weight_decay': args.weight_decay},
+                {'params': vae.mnist_vae.parameters(),
+                'lr': args.learning_rate,
+                'weight_decay': args.weight_decay},
+                {'params': baseline_nn.parameters(),
+                'lr': args.learning_rate,
+                'weight_decay': args.weight_decay}])
+
 
 else:
     print('invalid gradient estimator')
