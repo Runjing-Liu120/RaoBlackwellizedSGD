@@ -54,7 +54,7 @@ parser.add_argument('--propn_sample', type = float,
 # warm start parameters
 parser.add_argument('--use_vae_init',
                     type=distutils.util.strtobool, default='False',
-                    help='whether to initialize the mnist vae (but not the pixel attn)')
+                    help='whether to initialize the mnist vae')
 parser.add_argument('--vae_init_file',
                     type=str,
                     help='file to initialize the mnist vae')
@@ -140,7 +140,7 @@ elif args.grad_estimator == 'gumbel':
 
 elif args.grad_estimator == 'nvil':
     grad_estimator = bs_lib.nvil
-    baseline_nn = bs_lib.BaselineNN(slen = slen)
+    baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1])
     grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
 
     optimizer = optim.Adam([
