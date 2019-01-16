@@ -88,8 +88,9 @@ def train_vae(vae, train_loader, test_loader, optimizer,
     test_loss = eval_vae(vae, test_loader, grad_estimator, train = False,
                             set_true_loc = set_true_loc)
     _, debugging_images_loss = vae.get_rb_loss(images_debugging,
-                                    grad_estimator, 
-                                    n_samples = 0)
+                                    grad_estimator,
+                                    n_samples = 0,
+                                    set_true_loc = set_true_loc)
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
     print('  * init test recon loss: {:.10g};'.format(test_loss))
@@ -131,7 +132,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
                                     set_true_loc = set_true_loc)
             _, debugging_images_loss = vae.get_rb_loss(images_debugging,
                                             grad_estimator,
-                                            n_samples = 0)
+                                            n_samples = 0,
+                                            set_true_loc = set_true_loc)
 
             print('  * train recon loss: {:.10g};'.format(train_loss))
             print('  * test recon loss: {:.10g};'.format(test_loss))
