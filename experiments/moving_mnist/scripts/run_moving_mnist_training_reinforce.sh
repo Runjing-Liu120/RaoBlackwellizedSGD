@@ -12,4 +12,4 @@ python ../run_moving_mnist_training.py \
 			--save_every 20 \
 			--print_every 5 \
 			--topk 0 \
-			--n_samples 1 \
+			--n_samples 1 

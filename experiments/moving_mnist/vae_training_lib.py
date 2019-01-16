@@ -7,7 +7,7 @@ import torch.optim as optim
 
 from torch.distributions import Categorical
 
-import timeit
+import time
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -121,7 +121,7 @@ def train_vae(vae, train_loader, test_loader, optimizer,
                                 epoch = epoch,
                                 n_samples = n_samples)
 
-        elapsed = timeit.default_timer() - start_time
+        elapsed = time.time() - t0
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\
                     epoch, loss, elapsed))
         batch_losses.append(loss)
