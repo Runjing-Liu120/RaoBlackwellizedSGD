@@ -42,24 +42,26 @@ class BernoulliExperiments(object):
     def set_draw_array(self):
         # defines the 2**d vector of possible combinations
 
-        self.draw_array = []
+        self.draw_array = torch.zeros((self.dim, 2**self.dim))
         i = 0
         for draw in itertools.product(range(2), repeat=self.dim):
             draw_tensor = torch.Tensor(draw)
-            self.draw_array.append(draw_tensor)
+            self.draw_array[:, i] = draw_tensor
+            i += 1
 
     def f_z(self, i):
+        draw = (self.draw_array * i).sum(dim = 1)
         # returns the loss for the ith entry in draw array
-        return torch.Tensor([torch.sum((self.draw_array[i] - self.p0) ** 2)])
+        return torch.Tensor([torch.sum((draw - self.p0) ** 2)])
 
     def get_log_q(self):
         # returns a vector of log probabilities for all the possible draws
-        log_probs = torch.zeros((1, len(self.draw_array)))
+        log_probs = torch.zeros((1, 2**self.dim))
 
         e_b = sigmoid(self.var_params['phi'])
 
-        for i in range(len(self.draw_array)):
-            draw_tensor = torch.Tensor(self.draw_array[i])
+        for i in range(2**self.dim):
+            draw_tensor = self.draw_array[:, i]
             log_probs[0, i] = get_bernoulli_log_prob(e_b, draw_tensor)
 
         return log_probs
@@ -73,12 +75,15 @@ class BernoulliExperiments(object):
         e_b = sigmoid(self.var_params['phi'])
         return get_bernoulli_log_prob(e_b, self.draw_array[i])
 
-    def get_pm_loss(self, topk, grad_estimator):
+    def get_pm_loss(self, topk, grad_estimator, n_samples = 1):
         log_q = self.get_log_q()
-        pm_loss = rb_lib.get_raoblackwell_ps_loss(self.f_z, log_q, topk,
-                                    grad_estimator)
 
-        return pm_loss
+        pm_loss = 0.0
+        for i in range(n_samples):
+            pm_loss += rb_lib.get_raoblackwell_ps_loss(self.f_z, log_q, topk,
+                                        grad_estimator)
+
+        return pm_loss / n_samples
 
     def get_full_loss(self):
         log_q = self.get_log_q()

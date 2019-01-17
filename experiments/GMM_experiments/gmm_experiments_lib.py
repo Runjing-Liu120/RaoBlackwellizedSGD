@@ -200,13 +200,15 @@ class GMMExperiments(object):
 
         return self.f_one_hot_z(centroid_mask)
 
-    def get_pm_loss(self, topk, grad_estimator):
+    def get_pm_loss(self, topk, grad_estimator, nsamples = 1):
         log_q = self.get_log_q()
-        pm_loss = rb_lib.get_raoblackwell_ps_loss(self.f_z, log_q, topk, grad_estimator)
+
+        for i in range(n_samples)
+        pm_loss = rb_lib.get_raoblackwell_ps_loss(self.f_one_hot_z, log_q, topk, grad_estimator)
 
         return pm_loss
 
     def get_full_loss(self):
         log_q = self.get_log_q()
         class_weights = torch.exp(log_q)
-        return rb_lib.get_full_loss(self.f_z, class_weights)
+        return rb_lib.get_full_loss(self.f_one_hot_z, class_weights)
