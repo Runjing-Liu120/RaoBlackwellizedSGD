@@ -1,9 +1,10 @@
 #!/bin/bash
 
 python ../run_semisuper_vae_training.py \
-			--epochs 50 \
+			--epochs 100 \
 			--seed 901 \
 			--save_every 20 \
+			--print_every 5 \
 			--outdir '../mnist_vae_results/'\
 			--outfilename 'ss_vae_nvil' \
 			--propn_sample 1.0 \
