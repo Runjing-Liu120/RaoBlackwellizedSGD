@@ -139,13 +139,20 @@ def rebar(conditional_loss_fun, log_class_weights,
 def gumbel(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
-            annealing_fun):
+            annealing_fun,
+            straight_through = True):
 
     # get temperature
     temperature = annealing_fun(epoch)
 
     # sample gumbel
-    gumbel_sample = gumbel_softmax_lib.gumbel_softmax(log_class_weights, temperature)
+    if straight_through:
+        gumbel_sample = \
+            gumbel_softmax_lib.gumbel_softmax(log_class_weights, temperature)
+    else:
+        gumbel_sample = \
+            gumbel_softmax_lib.gumbel_softmax_sample(\
+                    log_class_weights, temperature)
 
     f_gumbel = conditional_loss_fun(gumbel_sample)
 
