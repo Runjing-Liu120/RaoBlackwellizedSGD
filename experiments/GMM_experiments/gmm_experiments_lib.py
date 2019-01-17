@@ -200,13 +200,16 @@ class GMMExperiments(object):
 
         return self.f_one_hot_z(centroid_mask)
 
-    def get_pm_loss(self, topk, grad_estimator, nsamples = 1):
+    def get_pm_loss(self, topk, grad_estimator, n_samples = 1):
         log_q = self.get_log_q()
 
-        for i in range(n_samples)
-        pm_loss = rb_lib.get_raoblackwell_ps_loss(self.f_one_hot_z, log_q, topk, grad_estimator)
+        pm_loss = 0.0
+        # print(n_samples)
+        for i in range(n_samples):
+            pm_loss += rb_lib.get_raoblackwell_ps_loss(self.f_one_hot_z, log_q,
+                    topk, grad_estimator)
 
-        return pm_loss
+        return pm_loss / n_samples
 
     def get_full_loss(self):
         log_q = self.get_log_q()
