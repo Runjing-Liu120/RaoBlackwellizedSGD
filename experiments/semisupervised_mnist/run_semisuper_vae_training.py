@@ -86,6 +86,7 @@ print('learning rate', args.learning_rate)
 
 assert os.path.exists(args.outdir)
 
+print('seed: ', args.seed)
 np.random.seed(args.seed)
 _ = torch.manual_seed(args.seed)
 
