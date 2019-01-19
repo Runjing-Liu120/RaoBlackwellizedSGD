@@ -6,13 +6,13 @@ do
 python ../run_semisuper_vae_training.py \
 			--epochs 100 \
 			--seed ${seed} \
+			--eval_test_set True \
 			--save_every 1000 \
 			--print_every 5 \
 			--outdir '../mnist_vae_results/'\
 			--outfilename ss_vae_nvil_trial${i} \
 			--learning_rate 1e-3 \
 			--topk 0 \
-			--eval_test_set True \
 			--grad_estimator 'nvil' \
 			--use_vae_init True \
 			--vae_init_file '../mnist_vae_results/warm_starts/warm_start_vae_final' \
