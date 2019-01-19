@@ -1,11 +1,11 @@
 #!/bin/bash
 for lr in 5e-3 1e-3 5e-4 1e-4 5e-5
-do 
+do
 python ../run_semisuper_vae_training.py \
 			--epochs 10 \
 			--seed 901 \
 			--save_every 1000 \
-			--print_every 1000 \
+			--print_every 10 \
 			--outdir '../mnist_vae_results/tuning_results/'\
 			--outfilename ss_vae_fully_marg_lr$lr \
 			--propn_sample 1.0 \

@@ -6,7 +6,7 @@ python ../run_semisuper_vae_training.py \
 			--epochs 10 \
 			--seed 901 \
 			--save_every 1000 \
-			--print_every 1000 \
+			--print_every 10 \
 			--outdir '../mnist_vae_results/tuning_results/'\
 			--outfilename ss_vae_nvil_lr$lr \
 			--learning_rate $lr \
