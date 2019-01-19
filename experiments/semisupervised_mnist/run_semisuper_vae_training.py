@@ -82,6 +82,7 @@ parser.add_argument('--rebar_eta', type = float, default = 1e-5)
 parser.add_argument('--gumbel_anneal_rate', type = float, default = 5e-5)
 
 args = parser.parse_args()
+print('learning rate', args.learning_rate)
 
 assert os.path.exists(args.outdir)
 
@@ -89,7 +90,6 @@ np.random.seed(args.seed)
 _ = torch.manual_seed(args.seed)
 
 # get data
-
 # train sets
 train_set_labeled, train_set_unlabeled, test_set = \
         mnist_data_lib.get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
