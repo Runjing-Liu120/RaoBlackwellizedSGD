@@ -1,14 +1,16 @@
 #!/bin/bash
 
-for seed in {1..10}
+for i in {1..10}
 do
+((seed=$i + 167))
 python ../run_semisuper_vae_training.py \
 			--epochs 100 \
-			--seed 210 + ${seed} \
+			--seed ${seed} \
+			--eval_test_set True \
 			--save_every 1000 \
 			--print_every 5 \
 			--outdir '../mnist_vae_results/'\
-			--outfilename ss_vae_rebar_trial${seed}\
+			--outfilename ss_vae_rebar_trial${i}\
 			--learning_rate 5e-4 \
 			--rebar_eta 1.0 \
 			--topk 0 \
