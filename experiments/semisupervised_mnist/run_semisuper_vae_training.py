@@ -39,12 +39,13 @@ parser.add_argument('--n_samples', type = int, default = 1)
 parser.add_argument('--grad_estimator',
                     type=str, default='reinforce',
                     help='type of gradient estimator. One of reinforce, reinforce_double_bs, ')
-parser.add_argument('--propn_labeled', type = float,
-                    help='proportion of dataset to label',
-                    default = 0.1)
 
 # whether to only train on labeled data
 parser.add_argument('--train_labeled_only',
+                    type=distutils.util.strtobool, default='False')
+
+# whether to evaluate on test set
+parser.add_argument('--args.eval_test_set',
                     type=distutils.util.strtobool, default='False')
 
 # saving vae
@@ -56,11 +57,6 @@ parser.add_argument('--outfilename', type = str,
 parser.add_argument('--save_every', type = int, default = 50,
                     help='save encoder ever how ___ epochs (default = 50)')
 parser.add_argument('--print_every', type = int, default = 10)
-
-# Whether to just work with subset of data
-parser.add_argument('--propn_sample', type = float,
-                    help='proportion of dataset to use',
-                    default = 1.0)
 
 # warm start parameters
 parser.add_argument('--use_vae_init',
@@ -88,17 +84,16 @@ np.random.seed(args.seed)
 _ = torch.manual_seed(args.seed)
 
 # get data
+
+# train sets
 train_set_labeled, train_set_unlabeled, test_set = \
-    mnist_data_lib.get_mnist_dataset_semisupervised(
-                propn_sample=args.propn_sample,
-                data_dir = '../mnist_data/',
-                propn_labeled = args.propn_labeled)
+        get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
+                                        eval_test_set = args.eval_test_set)
 
 train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,
                  batch_size=args.batch_size,
                  shuffle=True)
-print('num labeled: ', len(train_loader_labeled.sampler))
 
 if args.train_labeled_only:
     train_loader_unlabeled = deepcopy(train_loader_labeled)
