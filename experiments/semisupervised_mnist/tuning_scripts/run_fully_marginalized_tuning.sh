@@ -8,8 +8,6 @@ python ../run_semisuper_vae_training.py \
 			--print_every 10 \
 			--outdir '../mnist_vae_results/tuning_results/'\
 			--outfilename ss_vae_fully_marg_lr$lr \
-			--propn_sample 1.0 \
-			--propn_labeled 0.1 \
 			--learning_rate $lr \
 			--topk 10 \
 			--grad_estimator 'reinforce' \
