@@ -88,7 +88,8 @@ _ = torch.manual_seed(args.seed)
 # train sets
 train_set_labeled, train_set_unlabeled, test_set = \
         get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
-                                        eval_test_set = args.eval_test_set)
+                            train_test_split_folder = '../train_test_splits/',
+                            eval_test_set = args.eval_test_set)
 
 train_loader_labeled = torch.utils.data.DataLoader(
                  dataset=train_set_labeled,

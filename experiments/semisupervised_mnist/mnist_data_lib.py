@@ -94,14 +94,15 @@ class MNISTDataSet(Dataset):
 #     return train_set_labeled, train_set_unlabeled, test_set
 
 def get_mnist_dataset_semisupervised(data_dir = './mnist_data/',
+                                    train_test_split_folder = './train_test_splits/'
                                         eval_test_set = False):
 
-    labeled_indx = np.load(data_dir + 'labeled_train_indx.npy')
+    labeled_indx = np.load(train_test_split_folder + 'labeled_train_indx.npy')
     train_set_labeled = MNISTDataSet(data_dir = data_dir,
                             indices = labeled_indx,
                             train_set = True)
 
-    unlabeled_indx = np.load(data_dir + 'unlabeled_train_indx.npy')
+    unlabeled_indx = np.load(train_test_split_folder + 'unlabeled_train_indx.npy')
     train_set_unlabeled = MNISTDataSet(data_dir = data_dir,
                             indices = unlabeled_indx,
                             train_set = True)
@@ -116,7 +117,7 @@ def get_mnist_dataset_semisupervised(data_dir = './mnist_data/',
                                 train_set = False)
     else:
         print('evaluating on validation set. ')
-        validation_indx = np.load(data_dir + 'validation_indx.npy')
+        validation_indx = np.load(train_test_split_folder + 'validation_indx.npy')
         test_set = MNISTDataSet(data_dir = data_dir,
                                 indices = validation_indx,
                                 train_set = True)
