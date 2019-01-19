@@ -76,6 +76,11 @@ parser.add_argument('--classifier_init_file',
 parser.add_argument('--seed', type=int, default=4254,
                     help='random seed')
 
+
+# Gradient parameters
+parser.add_argument('--rebar_eta', type = float, default = 1e-5)
+parser.add_argument('--gumbel_anneal_rate', type = float, default = 5e-5)
+
 args = parser.parse_args()
 
 assert os.path.exists(args.outdir)
@@ -144,13 +149,15 @@ elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
+    print('eta: ', args.rebar_eta)
     grad_estimator_kwargs = {'temperature': 0.1,
-                            'eta': 0.7}
+                            'eta': args.rebar_eta}
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
+    print('annealing rate: ', args.gumbel_anneal_rate)
     grad_estimator_kwargs = {'annealing_fun': lambda t : \
                         np.maximum(0.5, \
-                        np.exp(-5e-5 * float(t) * \
+                        np.exp(- args.gumbel_anneal_rate* float(t) * \
                             len(train_loader_labeled.sampler) / args.batch_size)), 'straight_through': False}
 
 elif args.grad_estimator == 'nvil':
