@@ -77,6 +77,7 @@ parser.add_argument('--seed', type=int, default=4254,
                     help='random seed')
 
 args = parser.parse_args()
+print('learning rate', args.learning_rate)
 
 assert os.path.exists(args.outdir)
 
@@ -84,7 +85,6 @@ np.random.seed(args.seed)
 _ = torch.manual_seed(args.seed)
 
 # get data
-
 # train sets
 train_set_labeled, train_set_unlabeled, test_set = \
         mnist_data_lib.get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
