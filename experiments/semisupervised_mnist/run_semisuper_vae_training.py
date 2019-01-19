@@ -45,7 +45,7 @@ parser.add_argument('--train_labeled_only',
                     type=distutils.util.strtobool, default='False')
 
 # whether to evaluate on test set
-parser.add_argument('--args.eval_test_set',
+parser.add_argument('--eval_test_set',
                     type=distutils.util.strtobool, default='False')
 
 # saving vae
@@ -87,7 +87,7 @@ _ = torch.manual_seed(args.seed)
 
 # train sets
 train_set_labeled, train_set_unlabeled, test_set = \
-        get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
+        mnist_data_lib.get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
                                         eval_test_set = args.eval_test_set)
 
 train_loader_labeled = torch.utils.data.DataLoader(
