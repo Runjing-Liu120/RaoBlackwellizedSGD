@@ -163,7 +163,7 @@ elif args.grad_estimator == 'gumbel':
     grad_estimator_kwargs = {'annealing_fun': lambda t : \
                         np.maximum(0.5, \
                         np.exp(- args.gumbel_anneal_rate* float(t) * \
-                            len(train_loader_labeled.sampler) / args.batch_size)),
+                            len(train_loader.sampler) / args.batch_size)),
                             'straight_through': True}
 
 
