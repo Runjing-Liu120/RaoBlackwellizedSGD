@@ -87,9 +87,22 @@ _ = torch.manual_seed(args.seed)
 
 # LOAD DATA
 data_dir = '../mnist_data/'
-propn_sample = args.propn_sample
-train_set, test_set = \
-    mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
+# propn_sample = args.propn_sample
+# train_set, test_set = \
+#     mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
+
+train_set = MovingMNISTDataSet(data_dir = data_dir,
+                        indices = '../train_indx.npy',
+                        train_set = True)
+
+if args.eval_test_set:
+    test_set = MovingMNISTDataSet(data_dir = data_dir,
+                            propn_sample = propn_sample,
+                            train_set = False)
+else:
+    test_set = MovingMNISTDataSet(data_dir = data_dir,
+                            indices = '../val_indx.npy',
+                            train_set = True)
 
 train_loader = torch.utils.data.DataLoader(
                  dataset=train_set,
@@ -100,6 +113,7 @@ test_loader = torch.utils.data.DataLoader(
                 dataset=test_set,
                 batch_size=args.batch_size,
                 shuffle=False)
+                
 print('num train: ', len(train_loader.dataset))
 
 # SET UP VAE
