@@ -89,8 +89,8 @@ def validate_args():
 
 validate_args()
 
-np.random.seed(args.seed)
-_ = torch.manual_seed(args.seed)
+np.random.seed(901)
+_ = torch.manual_seed(901)
 print('seed: ', args.seed)
 # LOAD DATA
 data_dir = '../mnist_data/'
@@ -123,9 +123,6 @@ test_loader = torch.utils.data.DataLoader(
                 shuffle=False)
 
 print('num train: ', len(train_loader.dataset))
-
-np.random.seed(args.seed)
-_ = torch.manual_seed(args.seed)
 
 # SET UP VAE
 print('setting up VAE: ')
@@ -202,6 +199,9 @@ print('training vae')
 t0_train = time.time()
 
 outfile = os.path.join(args.outdir, args.outfilename)
+
+np.random.seed(args.seed)
+_ = torch.manual_seed(args.seed)
 
 vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
                 grad_estimator = grad_estimator,
