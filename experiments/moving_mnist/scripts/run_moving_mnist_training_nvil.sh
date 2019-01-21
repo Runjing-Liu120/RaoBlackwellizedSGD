@@ -12,7 +12,7 @@ do
 				--grad_estimator 'nvil' \
 				--propn_sample 0.1 \
 				--learning_rate 1e-3 \
-				--save_every 50 \
+				--save_every 6000 \
 				--print_every 2 \
 				--topk 0
 done
