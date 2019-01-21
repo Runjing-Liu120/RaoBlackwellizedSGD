@@ -91,7 +91,7 @@ validate_args()
 
 np.random.seed(args.seed)
 _ = torch.manual_seed(args.seed)
-
+print('seed: ', args.seed)
 # LOAD DATA
 data_dir = '../mnist_data/'
 # propn_sample = args.propn_sample
