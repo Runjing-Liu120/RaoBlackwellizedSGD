@@ -96,7 +96,7 @@ data_dir = '../mnist_data/'
 #     mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
 
 train_set = MovingMNISTDataSet(data_dir = data_dir,
-                        indices = '../train_indx.npy',
+                        indices = np.load('../train_indx.npy'),
                         train_set = True)
 
 if args.eval_test_set:
@@ -105,7 +105,7 @@ if args.eval_test_set:
                             train_set = False)
 else:
     test_set = MovingMNISTDataSet(data_dir = data_dir,
-                            indices = '../val_indx.npy',
+                            indices = np.load('../val_indx.npy'),
                             train_set = True)
 
 train_loader = torch.utils.data.DataLoader(
