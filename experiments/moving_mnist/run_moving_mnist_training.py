@@ -159,7 +159,7 @@ if args.grad_estimator == 'reinforce':
 elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'rebar':
-    print('rebar eta: ', bs_lib.rebar)
+    print('rebar eta: ', args.rebar_eta)
     grad_estimator = bs_lib.rebar
     grad_estimator_kwargs = {'temperature': 0.1,
                             'eta': args.rebar_eta}
