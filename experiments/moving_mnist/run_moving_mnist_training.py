@@ -100,7 +100,7 @@ data_dir = '../mnist_data/'
 
 
 train_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
-                        indices = np.load('../train_indx.npy'), 
+                        indices = np.load('../train_indx.npy'),
                         train_set = True)
 
 if args.eval_test_set:
@@ -148,6 +148,7 @@ else:
 		{'params': vae.mnist_vae.parameters(),
 		'lr': args.learning_rate,
 		'weight_decay': args.weight_decay}])
+print('lr: ', args.learning_rate)
 
 ### Gradient estimator
 if args.grad_estimator == 'reinforce':
@@ -155,10 +156,12 @@ if args.grad_estimator == 'reinforce':
 elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'rebar':
+    print('rebar eta: ', bs_lib.rebar)
     grad_estimator = bs_lib.rebar
     grad_estimator_kwargs = {'temperature': 0.1,
                             'eta': args.rebar_eta}
 elif args.grad_estimator == 'gumbel':
+    print('gumbel anneal rate: ', args.gumbel_anneal_rate)
     grad_estimator = bs_lib.gumbel
     grad_estimator_kwargs = {'annealing_fun': lambda t : \
                         np.maximum(0.5, \
