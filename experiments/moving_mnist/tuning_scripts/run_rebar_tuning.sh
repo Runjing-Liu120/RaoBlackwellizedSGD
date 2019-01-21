@@ -13,6 +13,7 @@ do
 					--outfilename moving_mnist_vae_rebar_lr${lr}_eta${eta} \
 					--grad_estimator 'rebar' \
 					--propn_sample 0.1 \
+					--eval_test_set False \
 					--learning_rate ${lr} \
 					--rebar_eta ${eta} \
 					--save_every 200 \
