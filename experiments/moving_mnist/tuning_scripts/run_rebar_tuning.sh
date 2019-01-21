@@ -15,7 +15,7 @@ do
 					--propn_sample 0.1 \
 					--learning_rate ${lr} \
 					--rebar_eta ${eta} \
-					--save_every 20 \
+					--save_every 200 \
 					--print_every 20 \
 					--topk 0
 	done

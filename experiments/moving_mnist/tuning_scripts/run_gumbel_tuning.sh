@@ -12,6 +12,7 @@ do
 					--outfilename moving_mnist_vae_gumbel_lr${lr}_annealr${annealr} \
 					--grad_estimator 'gumbel' \
 					--propn_sample 0.1 \
+					--eval_test_set False \
 					--learning_rate ${lr} \
 					--gumbel_anneal_rate ${annealr} \
 					--save_every 2000 \

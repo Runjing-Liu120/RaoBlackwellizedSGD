@@ -11,6 +11,7 @@ do
 					--outdir '../mnist_vae_results/tuning_results/'\
 					--outfilename moving_mnist_vae_reinforce_doublebs_topk${topk}_lr${lr} \
 					--grad_estimator 'reinforce_double_bs'\
+					--eval_test_set False \
 					--propn_sample 0.1 \
 					--learning_rate ${lr} \
 					--save_every 2000 \
