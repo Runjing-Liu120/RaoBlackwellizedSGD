@@ -124,6 +124,9 @@ test_loader = torch.utils.data.DataLoader(
 
 print('num train: ', len(train_loader.dataset))
 
+np.random.seed(args.seed)
+_ = torch.manual_seed(args.seed)
+
 # SET UP VAE
 print('setting up VAE: ')
 vae = mnist_vae_lib.MovingHandwritingVAE()
