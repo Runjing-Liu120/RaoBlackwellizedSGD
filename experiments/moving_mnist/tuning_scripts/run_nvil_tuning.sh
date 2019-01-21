@@ -9,6 +9,7 @@ python ../run_moving_mnist_training.py \
 			--outdir '../mnist_vae_results/tuning_results/'\
 			--outfilename moving_mnist_vae_nvil_lr${lr} \
 			--grad_estimator 'nvil' \
+			--eval_test_set False \
 			--propn_sample 0.1 \
 			--learning_rate ${lr} \
 			--save_every 200 \

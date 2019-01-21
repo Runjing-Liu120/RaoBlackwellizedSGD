@@ -55,6 +55,9 @@ parser.add_argument('--print_every', type = int, default = 10)
 parser.add_argument('--propn_sample', type = float,
                     help='proportion of dataset to use',
                     default = 1.0)
+# whether to evaluate on test set
+parser.add_argument('--eval_test_set',
+                    type=distutils.util.strtobool, default='False')
 
 # warm start parameters
 parser.add_argument('--use_vae_init',
@@ -95,16 +98,16 @@ data_dir = '../mnist_data/'
 # train_set, test_set = \
 #     mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
 
-train_set = MovingMNISTDataSet(data_dir = data_dir,
+train_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
                         indices = '../train_indx.npy',
                         train_set = True)
 
 if args.eval_test_set:
-    test_set = MovingMNISTDataSet(data_dir = data_dir,
+    test_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
                             propn_sample = 0.6,
                             train_set = False)
 else:
-    test_set = MovingMNISTDataSet(data_dir = data_dir,
+    test_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
                             indices = '../val_indx.npy',
                             train_set = True)
 
