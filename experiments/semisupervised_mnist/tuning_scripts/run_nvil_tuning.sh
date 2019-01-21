@@ -1,17 +1,15 @@
 #!/bin/bash
 
-for i in {1..10}
+for lr in 5e-3 1e-3 5e-4 1e-4 5e-5
 do
-((seed=$i+45345))
 python ../run_semisuper_vae_training.py \
-			--epochs 100 \
-			--seed ${seed} \
-			--eval_test_set True \
+			--epochs 10 \
+			--seed 901 \
 			--save_every 1000 \
-			--print_every 5 \
-			--outdir '../mnist_vae_results/'\
-			--outfilename ss_vae_nvil_trial${i} \
-			--learning_rate 1e-3 \
+			--print_every 10 \
+			--outdir '../mnist_vae_results/tuning_results/'\
+			--outfilename ss_vae_nvil_lr$lr \
+			--learning_rate $lr \
 			--topk 0 \
 			--grad_estimator 'nvil' \
 			--use_vae_init True \
