@@ -101,7 +101,7 @@ train_set = MovingMNISTDataSet(data_dir = data_dir,
 
 if args.eval_test_set:
     test_set = MovingMNISTDataSet(data_dir = data_dir,
-                            propn_sample = propn_sample,
+                            propn_sample = 0.6,
                             train_set = False)
 else:
     test_set = MovingMNISTDataSet(data_dir = data_dir,
