@@ -2,7 +2,7 @@
 
 for lr in 5e-3 1e-3 5e-4 1e-4 5e-5
 do
-	for eta in 0.2 0.4 0.6 0.8 1.0
+	for eta in 1.2 1.4 1.6 1.8 2.0
 	do
 		python ../run_semisuper_vae_training.py \
 					--epochs 10 \
