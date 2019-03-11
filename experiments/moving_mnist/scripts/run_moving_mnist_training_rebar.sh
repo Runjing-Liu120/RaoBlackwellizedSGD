@@ -1,14 +1,19 @@
 #!/bin/bash
 
-python ../run_moving_mnist_training.py \
-			--epochs 50 \
-			--batch_size 64 \
-			--seed 901 \
-			--outdir '../mnist_vae_results/'\
-			--outfilename 'moving_mnist_vae_rebar' \
-			--grad_estimator 'rebar' \
-			--propn_sample 0.1 \
-			--learning_rate 1e-3 \
-			--save_every 20 \
-			--print_every 2 \
-			--topk 0
+for i in {1..10}
+do
+	((seed=$i + 843))
+	python ../run_moving_mnist_training.py \
+				--epochs 50 \
+				--batch_size 64 \
+				--seed $seed \
+				--outdir '../mnist_vae_results/'\
+				--outfilename moving_mnist_vae_rebar_trial${i} \
+				--grad_estimator 'rebar' \
+				--rebar_eta 0.4 \
+				--propn_sample 0.1 \
+				--learning_rate 5e-4 \
+				--save_every 2000 \
+				--print_every 2 \
+				--topk 0
+done

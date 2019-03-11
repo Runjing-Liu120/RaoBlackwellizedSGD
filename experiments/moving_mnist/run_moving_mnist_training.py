@@ -55,6 +55,9 @@ parser.add_argument('--print_every', type = int, default = 10)
 parser.add_argument('--propn_sample', type = float,
                     help='proportion of dataset to use',
                     default = 1.0)
+# whether to evaluate on test set
+parser.add_argument('--eval_test_set',
+                    type=distutils.util.strtobool, default='False')
 
 # warm start parameters
 parser.add_argument('--use_vae_init',
@@ -70,6 +73,10 @@ parser.add_argument('--train_attn_only',
 parser.add_argument('--seed', type=int, default=4254,
                     help='random seed')
 
+# Gradient parameters
+parser.add_argument('--rebar_eta', type = float, default = 1e-5)
+parser.add_argument('--gumbel_anneal_rate', type = float, default = 5e-5)
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 args = parser.parse_args()
@@ -82,14 +89,28 @@ def validate_args():
 
 validate_args()
 
-np.random.seed(args.seed)
-_ = torch.manual_seed(args.seed)
-
+np.random.seed(901)
+_ = torch.manual_seed(901)
+print('seed: ', args.seed)
 # LOAD DATA
 data_dir = '../mnist_data/'
-propn_sample = args.propn_sample
-train_set, test_set = \
-    mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
+# propn_sample = args.propn_sample
+# train_set, test_set = \
+#     mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
+
+
+train_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
+                        indices = np.load('../train_indx.npy'),
+                        train_set = True)
+
+if args.eval_test_set:
+    test_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
+                            propn_sample = 0.6,
+                            train_set = False)
+else:
+    test_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
+                            indices = np.load('../val_indx.npy'),
+                            train_set = True)
 
 train_loader = torch.utils.data.DataLoader(
                  dataset=train_set,
@@ -100,6 +121,7 @@ test_loader = torch.utils.data.DataLoader(
                 dataset=test_set,
                 batch_size=args.batch_size,
                 shuffle=False)
+
 print('num train: ', len(train_loader.dataset))
 
 # SET UP VAE
@@ -126,6 +148,7 @@ else:
 		{'params': vae.mnist_vae.parameters(),
 		'lr': args.learning_rate,
 		'weight_decay': args.weight_decay}])
+print('lr: ', args.learning_rate)
 
 ### Gradient estimator
 if args.grad_estimator == 'reinforce':
@@ -133,15 +156,19 @@ if args.grad_estimator == 'reinforce':
 elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'rebar':
+    print('rebar eta: ', args.rebar_eta)
     grad_estimator = bs_lib.rebar
     grad_estimator_kwargs = {'temperature': 0.1,
-                            'eta': 0.3}
+                            'eta': args.rebar_eta}
 elif args.grad_estimator == 'gumbel':
+    print('gumbel anneal rate: ', args.gumbel_anneal_rate)
     grad_estimator = bs_lib.gumbel
-    grad_estimator_kwargs = {'annealing_fun': lambda t : 0.05} \
-                        # np.minimum(0.1, \
-                        # np.exp(-1e-2 * float(t) * \
-                        #     len(train_loader.dataset) / args.batch_size))}
+    grad_estimator_kwargs = {'annealing_fun': lambda t : \
+                        np.maximum(0.5, \
+                        np.exp(- args.gumbel_anneal_rate* float(t) * \
+                            len(train_loader.sampler) / args.batch_size)),
+                            'straight_through': True}
+
 
 elif args.grad_estimator == 'nvil':
     grad_estimator = bs_lib.nvil
@@ -172,6 +199,9 @@ print('training vae')
 t0_train = time.time()
 
 outfile = os.path.join(args.outdir, args.outfilename)
+
+np.random.seed(args.seed)
+_ = torch.manual_seed(args.seed)
 
 vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
                 grad_estimator = grad_estimator,
