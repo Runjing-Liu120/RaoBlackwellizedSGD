@@ -10,7 +10,7 @@ from torch.distributions import Normal, Categorical, Bernoulli
 import torch.nn.functional as F
 
 import sys
-sys.path.insert(0, '../')
+sys.path.insert(0, '../../rb_utils/')
 import rao_blackwellization_lib as rb_lib
 
 import timeit
@@ -94,6 +94,9 @@ class BernoulliExperiments(object):
 def sample_bern_gradient(phi0, bern_experiment, topk,
                             grad_estimator,
                             n_samples = 10000):
+    # repeatedly compute the gradient for the Bernoulli experiment
+    # return an array of samples
+    
     params = [phi0]
     optimizer = optim.SGD(params, lr = 1.0)
 

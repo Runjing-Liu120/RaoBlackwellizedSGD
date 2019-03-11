@@ -178,9 +178,7 @@ def gumbel(conditional_loss_fun, log_class_weights,
 
 class BaselineNN(nn.Module):
     def __init__(self, slen = 28):
-        # the encoder returns the mean and variance of the latent parameters
-        # given the image and its class (one hot encoded)
-
+        # this is a neural network for the NVIL baseline 
         super(BaselineNN, self).__init__()
 
         # image / model parameters
