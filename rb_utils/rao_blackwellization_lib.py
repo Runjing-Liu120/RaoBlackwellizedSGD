@@ -8,11 +8,27 @@ from baselines_lib import sample_class_weights
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def get_concentrated_mask(class_weights, topk):
-
     """
     Returns a logical mask indicating the categories with the top k largest
     probabilities, as well as the catogories corresponding to those with the
     top k largest probabilities.
+
+    Parameters
+    ----------
+    class_weights : torch.Tensor
+        Array of class weights, with each row corresponding to a datapoint,
+        each column corresponding to its weight
+    topk : int
+        the k in top-k
+    
+    Returns
+    -------
+    mask_topk : torch.Tensor
+        Boolean array with entry 1 if the corresponding class weight is
+        in the topk for that observation
+    topk_domain: torch.LongTensor
+        Array specifying the indices of class_weights that correspond to
+        the topk observations
     """
 
     mask_topk = torch.zeros(class_weights.shape).to(device)
@@ -33,8 +49,19 @@ def get_concentrated_mask(class_weights, topk):
 def get_full_loss(conditional_loss_fun, class_weights):
     """
     Returns the loss averaged over the class weights.
-    `conditional_loss_fun` is a function that returns the loss conditional
-    on an instance of the categorical random variable.
+
+    Parameters
+    ----------
+    conditional_loss_fun : function
+        Function that takes input a one-hot encoding of the discrete random
+        variable z and outputs the loss conditional on z
+    class_weights : torch.Tensor
+        Array of class weights, with each row corresponding to a datapoint,
+        each column corresponding to its weight
+    Returns
+    -------
+    full_loss : float
+        The loss averaged over the class weights of the discrete random variable
     """
 
     full_loss = 0.0
@@ -53,10 +80,10 @@ def get_full_loss(conditional_loss_fun, class_weights):
     return full_loss.sum()
 
 def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
-                                grad_estimator,
-                                grad_estimator_kwargs = {'grad_estimator_kwargs': None},
-                                epoch = None,
-                                data = None):
+                        grad_estimator,
+                        grad_estimator_kwargs = {'grad_estimator_kwargs': None},
+                        epoch = None,
+                        data = None):
 
     """
     Returns a pseudo_loss, such that the gradient obtained by calling
@@ -68,14 +95,17 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
         A function that returns the loss conditional on an instance of the
         categorical random variable. It must take in a one-hot-encoding
         matrix (batchsize x n_categories) and return a vector of
-        losses, one for each observation in the batch. 
-    log_class_weights : Tensor
+        losses, one for each observation in the batch.
+    log_class_weights : torch.Tensor
         A tensor of shape batchsize x n_categories of the log class weights
     topk : Integer
         The number of categories to sum over
-    grad_estimator :
-        TODO:
-
+    grad_estimator : function
+        A function that returns the pseudo loss, that is, the loss which
+        gives a gradient estimator when .backwards() is called.
+        See baselines_lib for details.
+    grad_estimator_kwargs : dict
+        keyword arguments to gradient estimator
     """
 
     # class weights from the variational distribution
@@ -114,15 +144,13 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
     sampled_weight = torch.sum(class_weights * (1 - concentrated_mask), dim = 1,
                                 keepdim = True)
 
-    # assert not np.any(sampled_weight == 0.)
-
-    if not(topk == class_weights.shape[1]): # i.e. if we didn't sum everything
-        # for numerical issues:
-        # class_weights_ = (class_weights + 1e-8) * (1 - concentrated_mask)
-        # sampled_weight_ = torch.sum(class_weights_, dim = 1, keepdim = True)
+    if not(topk == class_weights.shape[1]):
+        # if we didn't sum everything
+        # we sample the remaining terms
 
         # class weights conditioned on being in the diffuse set
-        conditional_class_weights = (class_weights + 1e-12) * (1 - concentrated_mask)  / (sampled_weight + 1e-12)
+        conditional_class_weights = (class_weights + 1e-12) * \
+                    (1 - concentrated_mask)  / (sampled_weight + 1e-12)
         assert not np.any(np.isnan(conditional_class_weights))
 
         # sample from conditional distribution

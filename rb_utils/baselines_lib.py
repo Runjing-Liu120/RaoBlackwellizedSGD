@@ -1,3 +1,7 @@
+# This library contains various gradient estimators
+# including REINFORCE, REINFORCE+,
+# REBAR, NVIL, and gumbel_softmax
+
 import numpy as np
 
 import torch
@@ -26,11 +30,49 @@ def get_reinforce_grad_sample(conditional_loss, log_class_weights,
 
     return (conditional_loss - baseline).detach() * log_class_weights
 
+
+
+"""
+Below are the gradient estimates for
+REINFORCE, REINFORCE+, REBAR, NVIL, and Gumbel-softmax.
+Each follow the pattern,
+
+Parameters
+----------
+conditional_loss_fun : function
+    A function that returns the loss conditional on an instance of the
+    categorical random variable. It must take in a one-hot-encoding
+    matrix (batchsize x n_categories) and return a vector of
+    losses, one for each observation in the batch.
+log_class_weights : torch.Tensor
+    A tensor of shape batchsize x n_categories of the log class weights
+class_weights_detached : torch.Tensor
+    A tensor of shape batchsize x n_categories of the class weights.
+    Must be detached, i.e. we do not compute gradients
+seq_tensor : torch.Tensor
+    A tensor containing values \{1 ... batchsize\}
+    TODO: is there a way to cache this?
+z_sample : torch.Tensor
+    The cateories (not one-hot-encoded) at which to evaluate the ps loss.
+epoch : int
+    The epoch of the optimizer
+data : torch.Tensor
+    The data at which we evaluate the loss
+grad_estimator_kwargs : dict
+    Additional arguments to the gradient estimators
+
+Returns
+-------
+ps_loss :
+a value such that ps_loss.backward() returns an
+estimate of the gradient.
+In general, ps_loss might not equal the actual loss.
+"""
+
 def reinforce(conditional_loss_fun, log_class_weights,
                 class_weights_detached, seq_tensor,
                 z_sample, epoch, data, grad_estimator_kwargs = None):
     # z_sample should be a vector of categories
-
     # conditional_loss_fun is a function that takes in a one hot encoding
     # of z and returns the loss
 

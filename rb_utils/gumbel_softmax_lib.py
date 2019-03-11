@@ -3,6 +3,9 @@ import torch.nn.functional as F
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+# These gumbel functions are taken from
+# https://gist.github.com/yzh119/fd2146d2aeb329d067568a493b20172f
+
 def sample_gumbel(shape, eps=1e-20):
     # samples from gumbel distribution
 
@@ -27,10 +30,12 @@ def gumbel_softmax(logits, temperature):
 
     return (y_hard - y).detach() + y
 
-# TODO: test this function
-# used for REBAR, see https://arxiv.org/pdf/1703.07370.pdf
+# this function is used for REBAR,
+# see https://arxiv.org/pdf/1703.07370.pdf
 def gumbel_softmax_conditional_sample(logits, temperature, one_hot_z,
                                             eps=1e-20):
+    # Samples a gumbel softmax random variable conditioned on
+    # the category sampled, z
     U = torch.rand(logits.shape).to(device)
     log_U = torch.log(U + eps)
     log_U_k = (one_hot_z * log_U).sum(dim = -1, keepdim = True)
