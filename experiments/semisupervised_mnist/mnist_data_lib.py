@@ -32,7 +32,8 @@ class MNISTDataSet(Dataset):
         assert os.path.exists(data_dir)
 
         # This is the full dataset
-        self.mnist_data_set = load_mnist_data(data_dir = data_dir, train = train_set)
+        self.mnist_data_set = load_mnist_data(data_dir = data_dir,
+                                                train = train_set)
 
         if train_set:
             n_image_full = len(self.mnist_data_set.train_labels)
@@ -42,7 +43,8 @@ class MNISTDataSet(Dataset):
         # we may wish to subset
         if indices is None:
             self.num_images = round(n_image_full * propn_sample)
-            self.sample_indx = np.random.choice(n_image_full, self.num_images, replace = False)
+            self.sample_indx = np.random.choice(n_image_full, self.num_images,
+                                                    replace = False)
         else:
             self.num_images = len(indices)
             self.sample_indx = indices
@@ -54,55 +56,17 @@ class MNISTDataSet(Dataset):
         return {'image' : self.mnist_data_set[self.sample_indx[idx]][0].squeeze(),
                 'label' : self.mnist_data_set[self.sample_indx[idx]][1].squeeze()}
 
-# def get_mnist_dataset(data_dir = '../mnist_data/',
-#                     propn_sample = 1.0):
-#     train_set = MNISTDataSet(data_dir = data_dir,
-#                             propn_sample = propn_sample,
-#                             train_set = True)
-#
-#     test_set = MNISTDataSet(data_dir = data_dir,
-#                             propn_sample = propn_sample,
-#                             train_set = False)
-#
-#     return train_set, test_set
-#
-# def get_mnist_dataset_semisupervised(data_dir = './mnist_data/',
-#                     propn_sample = 1.0, propn_labeled = 0.1):
-#
-#     total_num_train_images = 60000 # is there way to read this in?
-#
-#     # subsample training set if desired
-#     num_train_images = round(propn_sample * total_num_train_images)
-#     subs_train_set = np.random.choice(total_num_train_images, \
-#                         num_train_images,
-#                         replace = False)
-#
-#     # split training set into labeled and unlabled images
-#     num_labeled_images = round(num_train_images * propn_labeled)
-#     train_set_labeled = MNISTDataSet(data_dir = data_dir,
-#                             indices = subs_train_set[:num_labeled_images],
-#                             train_set = True)
-#     train_set_unlabeled = MNISTDataSet(data_dir = data_dir,
-#                             indices = subs_train_set[num_labeled_images:],
-#                             train_set = True)
-#
-#     # get test set as usual
-#     test_set = MNISTDataSet(data_dir = data_dir,
-#                             propn_sample = propn_sample,
-#                             train_set = False)
-#
-#     return train_set_labeled, train_set_unlabeled, test_set
-
 def get_mnist_dataset_semisupervised(data_dir = './mnist_data/',
-                                    train_test_split_folder = './test_train_splits/',
-                                        eval_test_set = False):
+                                train_test_split_folder = './test_train_splits/',
+                                eval_test_set = False):
 
     labeled_indx = np.load(train_test_split_folder + 'labeled_train_indx.npy')
     train_set_labeled = MNISTDataSet(data_dir = data_dir,
                             indices = labeled_indx,
                             train_set = True)
 
-    unlabeled_indx = np.load(train_test_split_folder + 'unlabeled_train_indx.npy')
+    unlabeled_indx = np.load(train_test_split_folder + \
+                                'unlabeled_train_indx.npy')
     train_set_unlabeled = MNISTDataSet(data_dir = data_dir,
                             indices = unlabeled_indx,
                             train_set = True)
@@ -117,7 +81,8 @@ def get_mnist_dataset_semisupervised(data_dir = './mnist_data/',
                                 train_set = False)
     else:
         print('evaluating on validation set. ')
-        validation_indx = np.load(train_test_split_folder + 'validation_indx.npy')
+        validation_indx = np.load(train_test_split_folder + \
+                                    'validation_indx.npy')
         test_set = MNISTDataSet(data_dir = data_dir,
                                 indices = validation_indx,
                                 train_set = True)
