@@ -10,7 +10,7 @@ from torch.distributions import Normal, Categorical, Bernoulli
 import torch.nn.functional as F
 
 import sys
-sys.path.insert(0, '../../rb_utils/')
+sys.path.insert(0, '../')
 import rao_blackwellization_lib as rb_lib
 
 import timeit

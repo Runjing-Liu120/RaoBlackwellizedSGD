@@ -24,11 +24,7 @@ class ToyExperiment(object):
         return self.log_softmax(self.eta * self.p0).view(1, self.k)
 
     def get_f_z(self, z):
-        # if isinstance(z, int):
-        #     z = torch.Tensor([z])
-
         return ((z * self.seq_tensor).sum() - self.eta) ** 2
-        # return (z.float() - torch.Tensor([3.])) ** 2
 
     def get_pm_loss(self, topk, grad_estimator,
                     grad_estimator_kwargs = {'grad_estimator_kwargs': None}):

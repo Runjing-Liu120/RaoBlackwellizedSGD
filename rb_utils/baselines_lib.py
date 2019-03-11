@@ -74,30 +74,6 @@ def reinforce_w_double_sample_baseline(\
     return get_reinforce_grad_sample(conditional_loss_fun_i,
                     log_class_weights_i, baseline) + conditional_loss_fun_i
 
-# def mu_prop(conditional_loss_fun, log_class_weights,
-#             class_weights_detached, seq_tensor, z_sample):
-#     assert len(z_sample) == log_class_weights.shape[0]
-#
-#     # compute loss from those categories
-#     conditional_loss_fun_i = conditional_loss_fun(z_sample)
-#     assert len(conditional_loss_fun_i) == log_class_weights.shape[0]
-#
-#     # get log class_weights
-#     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
-#
-#     # compute baseline with mu_prop
-#     # we will evalute Taylor expansion about z_bar
-#     z_bar = torch.ones(log_class_weights.shape) * 1 / log_class_weights.shape[1]
-#     z_bar.requires_grad_(True)
-#     # get gradient
-#     f_z_bar = conditional_loss_fun(z_bar)
-#
-#     f_z_bar.backwards()
-#     f_grad = z_bar.grad
-#
-#     # get baseline
-#     baseline = f_z_bar + f_grad
-
 def rebar(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
