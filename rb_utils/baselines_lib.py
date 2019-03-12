@@ -119,7 +119,11 @@ def reinforce_w_double_sample_baseline(\
 def rebar(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
-            temperature = 1., eta = 1.):
+            temperature = torch.Tensor([1.]),
+            eta = 1.,
+            adapt_temperature = False,
+            temp_optimizer = None,
+            optimizer = None):
 
     # sample gumbel
     gumbel_sample = log_class_weights + \
@@ -131,12 +135,12 @@ def rebar(conditional_loss_fun, log_class_weights,
     z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes)
 
     # get softmax z
-    z_softmax = F.softmax(gumbel_sample / temperature, dim=-1)
+    z_softmax = F.softmax(gumbel_sample / temperature[0], dim=-1)
 
     # conditional softmax z
     z_cond_softmax = \
         gumbel_softmax_lib.gumbel_softmax_conditional_sample(\
-            log_class_weights, temperature, z_one_hot)
+            log_class_weights, temperature[0], z_one_hot)
 
     # get log class_weights
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
@@ -151,6 +155,14 @@ def rebar(conditional_loss_fun, log_class_weights,
 
     # correction term
     correction_term = eta * f_z_softmax - eta * f_z_cond_softmax
+
+    # update temperature
+    if adapt_temperature:
+        temp_optimizer.zero_grad()
+        temp_ps_loss = (f_z_softmax**2).mean()
+        temp_ps_loss.backward(retain_graph=True)
+        temp_optimizer.step()
+        print('temperature', temperature[0])
 
     return reinforce_term + correction_term + f_z_hard
 
@@ -178,7 +190,7 @@ def gumbel(conditional_loss_fun, log_class_weights,
 
 class BaselineNN(nn.Module):
     def __init__(self, slen = 28):
-        # this is a neural network for the NVIL baseline 
+        # this is a neural network for the NVIL baseline
         super(BaselineNN, self).__init__()
 
         # image / model parameters

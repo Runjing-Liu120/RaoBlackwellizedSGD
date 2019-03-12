@@ -151,8 +151,16 @@ elif args.grad_estimator == 'reinforce_double_bs':
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     print('eta: ', args.rebar_eta)
-    grad_estimator_kwargs = {'temperature': 0.1,
+
+    grad_estimator = bs_lib.rebar
+    temperature_param = torch.Tensor([1.0]).requires_grad_(True)
+    temp_optimizer = optim.SGD([temperature_param], lr = 1e-2)
+    grad_estimator_kwargs = {'adapt_temperature': True,
+                             'temp_optimizer': temp_optimizer,
+                             'optimizer': optimizer,
+                             'temperature': temperature_param,
                             'eta': args.rebar_eta}
+
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
     print('annealing rate: ', args.gumbel_anneal_rate)
