@@ -126,13 +126,13 @@ class RELAXBaseline(nn.Module):
 
         # define the linear layers
         self.fc1 = nn.Linear(self.input_dim, 128)
-        self.fc2 = nn.Linear(128,
+        self.fc2 = nn.Linear(128, 128)
         self.fc3 = nn.Linear(128, 1)
 
     def forward(self, x):
 
         h = F.relu(self.fc1(x))
-        h = F.relu(self.fc2(x))
+        h = F.relu(self.fc2(h))
         h = self.fc3(h)
 
         return h
