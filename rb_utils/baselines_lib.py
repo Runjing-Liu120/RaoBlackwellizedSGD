@@ -179,7 +179,7 @@ def rebar(conditional_loss_fun, log_class_weights,
                         eta * (f_z_cond_softmax + c_cond_softmax.detach())
 
     return reinforce_term + correction_term + f_z_hard + \
-            (f_z_hard.detach() - c_cond_softmax)**2
+            (f_z_hard.detach() - eta * (f_z_cond_softmax + c_cond_softmax))**2
 
 def gumbel(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
