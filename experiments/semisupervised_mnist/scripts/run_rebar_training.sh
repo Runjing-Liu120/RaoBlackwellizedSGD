@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in {1..10}
+for i in {1..1}
 do
 ((seed=$i + 167))
 python ../run_semisuper_vae_training.py \
