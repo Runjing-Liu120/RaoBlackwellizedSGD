@@ -142,7 +142,8 @@ def rebar(conditional_loss_fun, log_class_weights,
             epoch, data,
             temperature = 1.,
             eta = 1.,
-            relax_bs = lambda x : torch.Tensor([0.0])):
+            relax_bs = lambda x : torch.Tensor([0.0]),
+            relax_bs_optimizer = None):
 
     # sample gumbel
     gumbel_sample = log_class_weights + \
@@ -177,11 +178,19 @@ def rebar(conditional_loss_fun, log_class_weights,
                         log_class_weights_i
 
     # correction term
-    correction_term = eta * (f_z_softmax + c_softmax.detach()) - \
-                        eta * (f_z_cond_softmax + c_cond_softmax.detach())
+    correction_term = eta * (f_z_softmax + c_softmax) - \
+                        eta * (f_z_cond_softmax + c_cond_softmax)
 
-    return reinforce_term + correction_term + f_z_hard + \
-            (f_z_hard.detach() - eta * (f_z_cond_softmax.detach() + c_cond_softmax))**2
+    if relax_bs_optimizer is not None:
+        relax_bs_optimizer.zero_grad()
+        bs_loss = \
+            (f_z_hard.detach() - eta * \
+                (f_z_cond_softmax.detach() + c_cond_softmax)).mean()**2
+        bs_loss.backward(retain_graph=True)
+        relax_bs_optimizer.step()
+
+
+    return reinforce_term + correction_term + f_z_hard
 
 def gumbel(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,

@@ -154,12 +154,9 @@ elif args.grad_estimator == 'rebar':
     relax_bs = bs_lib.RELAXBaseline(input_dim=10).to(device)
     grad_estimator_kwargs = {'temperature': 0.1,
                             'eta': args.rebar_eta,
-                            'relax_bs': relax_bs}
-    optimizer = optim.Adam([
-                    {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
-                    {'params': vae.parameters(), 'lr': args.learning_rate},
-                    {'params': relax_bs.parameters(), 'lr': args.learning_rate}],
-                    weight_decay=args.weight_decay)
+                            'relax_bs': relax_bs,
+                'relax_bs_optimizer':
+                    optim.Adam([{'params': relax_bs.parameters(), 'lr': 1e-2}])}
 
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
