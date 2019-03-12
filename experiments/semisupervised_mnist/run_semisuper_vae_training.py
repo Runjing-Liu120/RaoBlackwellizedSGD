@@ -153,7 +153,7 @@ elif args.grad_estimator == 'rebar':
     print('eta: ', args.rebar_eta)
 
     grad_estimator = bs_lib.rebar
-    temperature_param = torch.Tensor([1.0]).requires_grad_(True).to(device)
+    temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
     temp_optimizer = optim.SGD([temperature_param], lr = 1e-2)
     grad_estimator_kwargs = {'adapt_temperature': True,
                              'temp_optimizer': temp_optimizer,

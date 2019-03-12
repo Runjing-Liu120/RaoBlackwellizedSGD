@@ -162,7 +162,7 @@ def rebar(conditional_loss_fun, log_class_weights,
         temp_ps_loss = (f_z_softmax**2).mean()
         temp_ps_loss.backward(retain_graph=True)
         temp_optimizer.step()
-        print('temperature', temperature[0])
+        # print('temperature', temperature[0])
 
     return reinforce_term + correction_term + f_z_hard
 
