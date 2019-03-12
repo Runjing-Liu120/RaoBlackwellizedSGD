@@ -116,10 +116,31 @@ def reinforce_w_double_sample_baseline(\
     return get_reinforce_grad_sample(conditional_loss_fun_i,
                     log_class_weights_i, baseline) + conditional_loss_fun_i
 
+class RELAXBaseline(nn.Module):
+    def __init__(self, input_dim):
+        # this is a neural network for the NVIL baseline
+        super(RELAXBaseline, self).__init__()
+
+        # image / model parameters
+        self.input_dim = input_dim
+
+        # define the linear layers
+        self.fc1 = nn.Linear(self.input_dim, 128)
+        self.fc2 = nn.Linear(128, 1)
+
+    def forward(self, x):
+
+        h = F.relu(self.fc1(x))
+        h = self.fc2(h)
+
+        return h
+
 def rebar(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
-            temperature = 1., eta = 1.):
+            temperature = 1.,
+            eta = 1.,
+            relax_bs = lambda x : torch.Tensor([0.0])):
 
     # sample gumbel
     gumbel_sample = log_class_weights + \
@@ -146,13 +167,19 @@ def rebar(conditional_loss_fun, log_class_weights,
     f_z_softmax = conditional_loss_fun(z_softmax)
     f_z_cond_softmax = conditional_loss_fun(z_cond_softmax)
 
-    reinforce_term = (f_z_hard - eta * f_z_cond_softmax).detach() * \
+    # baseline terms
+    c_softmax = relax_bs(z_softmax).squeeze()
+    c_cond_softmax = relax_bs(z_cond_softmax).squeeze()
+
+    reinforce_term = (f_z_hard - eta * (f_z_cond_softmax + c_cond_softmax)).detach() * \
                         log_class_weights_i
 
     # correction term
-    correction_term = eta * f_z_softmax - eta * f_z_cond_softmax
+    correction_term = eta * (f_z_softmax + c_softmax.detach()) - \
+                        eta * (f_z_cond_softmax + c_cond_softmax.detach())
 
-    return reinforce_term + correction_term + f_z_hard
+    return reinforce_term + correction_term + f_z_hard + \
+            (f_z_hard.detach() - c_cond_softmax)**2
 
 def gumbel(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
@@ -178,7 +205,7 @@ def gumbel(conditional_loss_fun, log_class_weights,
 
 class BaselineNN(nn.Module):
     def __init__(self, slen = 28):
-        # this is a neural network for the NVIL baseline 
+        # this is a neural network for the NVIL baseline
         super(BaselineNN, self).__init__()
 
         # image / model parameters

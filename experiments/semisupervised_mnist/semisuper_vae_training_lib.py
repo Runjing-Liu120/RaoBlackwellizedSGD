@@ -51,7 +51,9 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                             grad_estimator = bs_lib.reinforce,
                             grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                             n_samples = 1,
-                            train_labeled_only = False, epoch = 0):
+                            train_labeled_only = False, epoch = 0,
+                            temperature_param = None,
+                            temp_optimizer = None):
 
     if train:
         assert optimizer is not None
