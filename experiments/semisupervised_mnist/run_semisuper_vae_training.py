@@ -151,8 +151,10 @@ elif args.grad_estimator == 'reinforce_double_bs':
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     print('eta: ', args.rebar_eta)
+    relax_bs = bs_lib.RELAXBaseline(input_dim=10).to(device)
     grad_estimator_kwargs = {'temperature': 0.1,
-                            'eta': args.rebar_eta}
+                            'eta': args.rebar_eta,
+                            'relax_bs': relax_bs}
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
     print('annealing rate: ', args.gumbel_anneal_rate)
