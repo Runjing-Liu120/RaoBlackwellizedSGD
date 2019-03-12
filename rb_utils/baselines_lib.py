@@ -156,14 +156,6 @@ def rebar(conditional_loss_fun, log_class_weights,
     # correction term
     correction_term = eta * f_z_softmax - eta * f_z_cond_softmax
 
-    # update temperature
-    if adapt_temperature:
-        temp_optimizer.zero_grad()
-        temp_ps_loss = (f_z_softmax**2).mean()
-        temp_ps_loss.backward(retain_graph=True)
-        temp_optimizer.step()
-        # print('temperature', temperature[0])
-
     return reinforce_term + correction_term + f_z_hard
 
 def gumbel(conditional_loss_fun, log_class_weights,
