@@ -155,6 +155,12 @@ elif args.grad_estimator == 'rebar':
     grad_estimator_kwargs = {'temperature': 0.1,
                             'eta': args.rebar_eta,
                             'relax_bs': relax_bs}
+    optimizer = optim.Adam([
+                    {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
+                    {'params': vae.parameters(), 'lr': args.learning_rate},
+                    {'params': relax_bs.parameters(), 'lr': args.learning_rate}],
+                    weight_decay=args.weight_decay)
+
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
     print('annealing rate: ', args.gumbel_anneal_rate)
