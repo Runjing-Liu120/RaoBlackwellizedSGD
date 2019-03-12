@@ -9,10 +9,10 @@ python ../run_semisuper_vae_training.py \
 			--eval_test_set True \
 			--save_every 1000 \
 			--print_every 5 \
-			--outdir '../mnist_vae_results/'\
+			--outdir '../mnist_vae_results2/'\
 			--outfilename ss_vae_rebar_trial${i}\
 			--learning_rate 5e-4 \
-			--rebar_eta 1.0 \
+			--rebar_eta 0.9 \
 			--topk 0 \
 			--grad_estimator 'rebar' \
 			--use_vae_init True \
