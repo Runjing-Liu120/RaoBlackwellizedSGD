@@ -33,13 +33,16 @@ def gumbel_softmax(logits, temperature):
 # this function is used for REBAR,
 # see https://arxiv.org/pdf/1703.07370.pdf
 def gumbel_softmax_conditional_sample(logits, temperature, one_hot_z,
-                                            eps=1e-20):
+                                            eps=1e-20, detach = False):
     # Samples a gumbel softmax random variable conditioned on
     # the category sampled, z
     U = torch.rand(logits.shape).to(device)
     log_U = torch.log(U + eps)
     log_U_k = (one_hot_z * log_U).sum(dim = -1, keepdim = True)
 
+    if detach:
+        logits = logits.detach()
+        
     gumbel_conditional_sample = \
         -torch.log(-log_U_k + \
                 -log_U / (torch.exp(logits) + eps) * (1 - one_hot_z))

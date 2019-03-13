@@ -9,8 +9,8 @@ python ../run_semisuper_vae_training.py \
 			--eval_test_set True \
 			--save_every 1000 \
 			--print_every 5 \
-			--outdir '../mnist_vae_results/'\
-			--outfilename ss_vae_rebar_trial${i}\
+			--outdir '../mnist_vae_results_rebar/'\
+			--outfilename ss_vae_relax_adapt_cv_trial${i}\
 			--learning_rate 5e-4 \
 			--rebar_eta 1.0 \
 			--topk 0 \
