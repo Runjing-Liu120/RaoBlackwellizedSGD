@@ -7,8 +7,8 @@ do
 					--seed 901 \
 					--save_every 1000 \
 					--print_every 10 \
-					--outdir '../mnist_vae_results_rebar/tuning_results/'\
-					--outfilename ss_vae_rebar_adapt_cv_lr${lr}\
+					--outdir '../mnist_vae_results/tuning_results/'\
+					--outfilename ss_vae_relax_adapt_cv_lr${lr}\
 					--learning_rate $lr \
 					--rebar_eta 1.0 \
 					--topk 0 \
