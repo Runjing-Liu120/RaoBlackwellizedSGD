@@ -17,5 +17,4 @@ do
 					--vae_init_file '../mnist_vae_results/warm_starts/warm_start_vae_final' \
 					--use_classifier_init True \
 					--classifier_init_file '../mnist_vae_results/warm_starts/warm_start_classifier_final'
-		done
 done
