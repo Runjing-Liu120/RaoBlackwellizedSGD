@@ -156,7 +156,7 @@ elif args.grad_estimator == 'reinforce_double_bs':
 elif args.grad_estimator == 'relax':
     grad_estimator = bs_lib.relax
     temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
-    c_phi = bs_lib.RELAXBaseline(10).to(device)
+    c_phi = bs_lib.RELAXBaseline(68**2).to(device)
     grad_estimator_kwargs = {'temperature': temperature_param,
                             'eta': args.rebar_eta,
                             'c_phi': c_phi}
