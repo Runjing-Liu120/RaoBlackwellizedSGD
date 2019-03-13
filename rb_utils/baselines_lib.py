@@ -1,6 +1,6 @@
 # This library contains various gradient estimators
 # including REINFORCE, REINFORCE+,
-# REBAR, NVIL, and gumbel_softmax
+# REBAR/RELAX, NVIL, and gumbel_softmax
 
 import numpy as np
 
@@ -34,7 +34,7 @@ def get_reinforce_grad_sample(conditional_loss, log_class_weights,
 
 """
 Below are the gradient estimates for
-REINFORCE, REINFORCE+, REBAR, NVIL, and Gumbel-softmax.
+REINFORCE, REINFORCE+, REBAR/RELAX, NVIL, and Gumbel-softmax.
 Each follow the pattern,
 
 Parameters
@@ -137,12 +137,14 @@ class RELAXBaseline(nn.Module):
 
         return h
 
-def rebar(conditional_loss_fun, log_class_weights,
+def relax(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
             temperature = torch.Tensor([1.0]),
             eta = 1.,
             c_phi = lambda x : torch.Tensor([0.0])):
+    # with the default c_phi value, this is just REBAR
+    # RELAX adds a learned component c_phi
 
     # sample gumbel
     gumbel_sample = log_class_weights + \
@@ -177,12 +179,14 @@ def rebar(conditional_loss_fun, log_class_weights,
             log_class_weights, temperature[0], z_one_hot, detach = True)
     c_cond_softmax = c_phi(z_cond_softmax_detached).squeeze()
 
-    reinforce_term = (f_z_hard - eta * (f_z_cond_softmax - c_cond_softmax)).detach() * \
+    reinforce_term = \
+        (f_z_hard - eta * (f_z_cond_softmax - c_cond_softmax)).detach() * \
                         log_class_weights_i + \
                         log_class_weights_i * eta * c_cond_softmax
 
     # correction term
-    correction_term = eta * (f_z_softmax - c_softmax) - eta * (f_z_cond_softmax - c_cond_softmax)
+    correction_term = eta * (f_z_softmax - c_softmax) - \
+                        eta * (f_z_cond_softmax - c_cond_softmax)
 
     return reinforce_term + correction_term + f_z_hard
 

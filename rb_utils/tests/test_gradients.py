@@ -12,6 +12,8 @@ import itertools
 
 from copy import deepcopy
 
+import sys
+sys.path.insert(0, '../')
 import optimization_lib as optim_lib
 import rao_blackwellization_lib as rb_lib
 import baselines_lib as bs_lib
@@ -128,8 +130,9 @@ class TestRB(unittest.TestCase):
             toy_experiment.set_parameter(eta)
             pm_loss = toy_experiment.get_pm_loss(
                     topk = 0,
-                    grad_estimator = bs_lib.rebar,
-                    grad_estimator_kwargs = {'temperature': 0.1, 'eta': 1.0})
+                    grad_estimator = bs_lib.relax,
+                    grad_estimator_kwargs = {'temperature': torch.Tensor([0.1]),
+                                                'eta': 1.0})
             rebar_pm_losses[i] = pm_loss
             pm_loss.backward()
 
