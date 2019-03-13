@@ -1,5 +1,6 @@
 import torch
 from torch import optim
+from torch.autograd import grad
 
 from itertools import cycle
 
@@ -51,7 +52,8 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                             grad_estimator = bs_lib.reinforce,
                             grad_estimator_kwargs = {'grad_estimator_kwargs': None},
                             n_samples = 1,
-                            train_labeled_only = False, epoch = 0):
+                            train_labeled_only = False, epoch = 0,
+                            baseline_optimizer = None):
 
     if train:
         assert optimizer is not None
@@ -122,8 +124,18 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                 supervised_loss * num_labeled / labeled_image.shape[0]
 
             # backprop gradients from pseudo loss
-            total_ps_loss.backward()
+            total_ps_loss.backward(retain_graph = True)
             optimizer.step()
+
+            if baseline_optimizer is not None:
+                # flush gradients
+                optimizer.zero_grad()
+                # for params in classifier.parameters():
+                baseline_optimizer.zero_grad()
+                loss_grads = grad(total_ps_loss, classifier.parameters(), create_graph=True)
+                gn2 = sum([grd.norm()**2 for grd in loss_grads])
+                gn2.backward()
+                baseline_optimizer.step()
 
         # loss at MAP value of z
         loss = \
@@ -147,7 +159,8 @@ def train_semisuper_vae(vae, classifier,
                 epochs=10,
                 save_every = 10,
                 print_every = 10,
-                outfile='./ss_mnist'):
+                outfile='./ss_mnist',
+                baseline_optimizer = None):
 
     # initial losses
     init_train_loss = eval_semisuper_vae(vae, classifier, train_loader)
@@ -183,7 +196,8 @@ def train_semisuper_vae(vae, classifier,
                             train = True,
                             optimizer = optimizer,
                             train_labeled_only = train_labeled_only,
-                            epoch = epoch)
+                            epoch = epoch,
+                            baseline_optimizer = baseline_optimizer)
 
         elapsed = time.time() - t0
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\

@@ -131,12 +131,12 @@ def rebar(conditional_loss_fun, log_class_weights,
     z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes)
 
     # get softmax z
-    z_softmax = F.softmax(gumbel_sample / temperature, dim=-1)
+    z_softmax = F.softmax(gumbel_sample / temperature[0], dim=-1)
 
     # conditional softmax z
     z_cond_softmax = \
         gumbel_softmax_lib.gumbel_softmax_conditional_sample(\
-            log_class_weights, temperature, z_one_hot)
+            log_class_weights, temperature[0], z_one_hot)
 
     # get log class_weights
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
@@ -178,7 +178,7 @@ def gumbel(conditional_loss_fun, log_class_weights,
 
 class BaselineNN(nn.Module):
     def __init__(self, slen = 28):
-        # this is a neural network for the NVIL baseline 
+        # this is a neural network for the NVIL baseline
         super(BaselineNN, self).__init__()
 
         # image / model parameters
