@@ -143,6 +143,7 @@ optimizer = optim.Adam([
                 {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
                 {'params': vae.parameters(), 'lr': args.learning_rate}],
                 weight_decay=args.weight_decay)
+bs_optimizer = None
 
 if args.grad_estimator == 'reinforce':
     grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
@@ -151,8 +152,11 @@ elif args.grad_estimator == 'reinforce_double_bs':
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     print('eta: ', args.rebar_eta)
-    grad_estimator_kwargs = {'temperature': 0.1,
+    temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
+    grad_estimator_kwargs = {'temperature': temperature_param,
                             'eta': args.rebar_eta}
+    bs_optimizer = optim.Adam([{'params': [temperature_param], 'lr':1e-1}])
+
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
     print('annealing rate: ', args.gumbel_anneal_rate)
@@ -191,4 +195,5 @@ ss_lib.train_semisuper_vae(vae, classifier,
                 outfile = outfile,
                 save_every = args.save_every,
                 print_every = args.print_every,
-                train_labeled_only = args.train_labeled_only)
+                train_labeled_only = args.train_labeled_only,
+                bs_optimizer = bs_optimizer)
