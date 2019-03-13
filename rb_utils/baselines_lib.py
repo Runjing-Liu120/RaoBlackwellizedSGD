@@ -152,7 +152,7 @@ def rebar(conditional_loss_fun, log_class_weights,
     _, z_sample = gumbel_sample.max(dim=-1)
     n_classes = log_class_weights.shape[1]
     z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes)
-    temperature = torch.clamp(temperature, 0.05, 5.0)
+    temperature = torch.clamp(temperature, 0.01, 5.0)
 
     # get softmax z
     z_softmax = F.softmax(gumbel_sample / temperature[0], dim=-1)
