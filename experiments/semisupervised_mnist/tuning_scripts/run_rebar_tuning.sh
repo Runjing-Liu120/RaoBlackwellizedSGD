@@ -10,7 +10,7 @@ do
 					--outdir '../mnist_vae_results_rebar/tuning_results/'\
 					--outfilename ss_vae_rebar_adapt_cv_lr${lr}\
 					--learning_rate $lr \
-					--rebar_eta $eta \
+					--rebar_eta 1.0 \
 					--topk 0 \
 					--grad_estimator 'rebar' \
 					--use_vae_init True \
