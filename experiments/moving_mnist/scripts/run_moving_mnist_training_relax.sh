@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in {1..1}
+for i in {1..10}
 do
 	((seed=$i + 843))
 	python ../run_moving_mnist_training.py \
