@@ -152,8 +152,8 @@ elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     print('eta: ', args.rebar_eta)
     # relax_bs = bs_lib.RELAXBaseline(input_dim=10).to(device)
-    relax_bs = bs_lib.BaselineNN(slen = slen)
-    grad_estimator_kwargs = {'temperature': 0.1,
+    relax_bs = bs_lib.BaselineNN(slen = slen).to(device)
+    grad_estimator_kwargs = {'temperature': 0.2,
                             'eta': args.rebar_eta,
                             'relax_bs': relax_bs,
                 'relax_bs_optimizer':
