@@ -10,7 +10,9 @@ from torch.utils.data import Dataset
 import numpy as np
 
 def load_mnist_data(data_dir = '../mnist_data/', train = True):
-    assert os.path.exists(data_dir)
+    if not os.path.exists(data_dir):
+        print('creaing folder: ', data_dir)
+        os.mkdir(data_dir)
 
     trans = lambda x: transforms.ToTensor()(x).bernoulli()
 
@@ -29,8 +31,6 @@ class MNISTDataSet(Dataset):
         super(MNISTDataSet, self).__init__()
 
         # Load MNIST dataset
-        assert os.path.exists(data_dir)
-
         # This is the full dataset
         self.mnist_data_set = load_mnist_data(data_dir = data_dir,
                                                 train = train_set)

@@ -149,15 +149,15 @@ if args.grad_estimator == 'reinforce':
     grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'reinforce_double_bs':
     grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
-elif args.grad_estimator == 'rebar':
-    grad_estimator = bs_lib.rebar
+elif args.grad_estimator == 'relax':
+    grad_estimator = bs_lib.relax
     print('eta: ', args.rebar_eta)
     temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
     c_phi = bs_lib.RELAXBaseline(10).to(device)
     grad_estimator_kwargs = {'temperature': temperature_param,
                             'eta': args.rebar_eta,
                             'c_phi': c_phi}
-                            
+
     bs_optimizer = optim.Adam([{'params': [temperature_param]},
                             {'params': c_phi.parameters()}], lr = 1e-2)
 

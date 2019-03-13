@@ -12,7 +12,7 @@ do
 					--learning_rate $lr \
 					--rebar_eta 1.0 \
 					--topk 0 \
-					--grad_estimator 'rebar' \
+					--grad_estimator 'relax' \
 					--use_vae_init True \
 					--vae_init_file '../mnist_vae_results/warm_starts/warm_start_vae_final' \
 					--use_classifier_init True \
