@@ -172,10 +172,14 @@ def rebar(conditional_loss_fun, log_class_weights,
 
     # baseline terms
     c_softmax = c_phi(z_softmax).squeeze()
-    c_cond_softmax = c_phi(z_cond_softmax).squeeze()
+    z_cond_softmax_detached = \
+        gumbel_softmax_lib.gumbel_softmax_conditional_sample(\
+            log_class_weights, temperature[0], z_one_hot, detach = True)
+    c_cond_softmax = c_phi(z_cond_softmax_detached).squeeze()
 
     reinforce_term = (f_z_hard - eta * (f_z_cond_softmax - c_cond_softmax)).detach() * \
-                        log_class_weights_i
+                        log_class_weights_i + \
+                        log_class_weights_i * eta * c_cond_softmax
 
     # correction term
     correction_term = eta * (f_z_softmax - c_softmax) - eta * (f_z_cond_softmax - c_cond_softmax)
