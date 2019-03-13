@@ -151,12 +151,13 @@ elif args.grad_estimator == 'reinforce_double_bs':
 elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     print('eta: ', args.rebar_eta)
-    relax_bs = bs_lib.RELAXBaseline(input_dim=10).to(device)
+    # relax_bs = bs_lib.RELAXBaseline(input_dim=10).to(device)
+    relax_bs = bs_lib.BaselineNN(slen = slen)
     grad_estimator_kwargs = {'temperature': 0.1,
                             'eta': args.rebar_eta,
                             'relax_bs': relax_bs,
                 'relax_bs_optimizer':
-                    optim.Adam([{'params': relax_bs.parameters(), 'lr': 1e-2}])}
+                    optim.Adam([{'params': relax_bs.parameters(), 'lr': args.learning_rate}])}
 
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel

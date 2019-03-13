@@ -155,12 +155,12 @@ def rebar(conditional_loss_fun, log_class_weights,
     z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes)
 
     # get softmax z
-    z_softmax = F.softmax(gumbel_sample / temperature, dim=-1)
+    z_softmax = F.softmax(gumbel_sample / temperature[0], dim=-1)
 
     # conditional softmax z
     z_cond_softmax = \
         gumbel_softmax_lib.gumbel_softmax_conditional_sample(\
-            log_class_weights, temperature, z_one_hot)
+            log_class_weights, temperature[0], z_one_hot)
 
     # get log class_weights
     log_class_weights_i = log_class_weights[seq_tensor, z_sample]
@@ -171,24 +171,24 @@ def rebar(conditional_loss_fun, log_class_weights,
     f_z_cond_softmax = conditional_loss_fun(z_cond_softmax)
 
     # baseline terms
-    c_softmax = relax_bs(z_softmax).squeeze()
-    c_cond_softmax = relax_bs(z_cond_softmax).squeeze()
+    c_phi = relax_bs(data).squeeze()
+    # c_softmax = relax_bs(z_softmax).squeeze()
+    # c_cond_softmax = relax_bs(z_cond_softmax).squeeze()
 
-    reinforce_term = (f_z_hard - eta * (f_z_cond_softmax + c_cond_softmax)).detach() * \
+    reinforce_term = (f_z_hard - eta * (f_z_cond_softmax + c_phi)).detach() * \
                         log_class_weights_i
 
     # correction term
-    correction_term = eta * (f_z_softmax + c_softmax) - \
-                        eta * (f_z_cond_softmax + c_cond_softmax)
-
+    correction_term = eta * (f_z_softmax) - \
+                        eta * (f_z_cond_softmax)
+    # print(temperature)
     if relax_bs_optimizer is not None:
         relax_bs_optimizer.zero_grad()
         bs_loss = \
             (f_z_hard.detach() - eta * \
-                (f_z_cond_softmax.detach() + c_cond_softmax)).mean()**2
-        bs_loss.backward(retain_graph=True)
+                (f_z_cond_softmax.detach() + c_phi)).mean()**2
+        bs_loss.backward()
         relax_bs_optimizer.step()
-
 
     return reinforce_term + correction_term + f_z_hard
 
