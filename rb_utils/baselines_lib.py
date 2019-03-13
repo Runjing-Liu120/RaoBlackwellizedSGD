@@ -116,10 +116,33 @@ def reinforce_w_double_sample_baseline(\
     return get_reinforce_grad_sample(conditional_loss_fun_i,
                     log_class_weights_i, baseline) + conditional_loss_fun_i
 
+class RELAXBaseline(nn.Module):
+    def __init__(self, input_dim):
+        # this is a neural network for the NVIL baseline
+        super(RELAXBaseline, self).__init__()
+
+        # image / model parameters
+        self.input_dim = input_dim
+
+        # define the linear layers
+        self.fc1 = nn.Linear(self.input_dim, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, 1)
+
+    def forward(self, x):
+
+        h = F.relu(self.fc1(x))
+        h = F.relu(self.fc2(h))
+        h = self.fc3(h)
+
+        return h
+
 def rebar(conditional_loss_fun, log_class_weights,
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
-            temperature = 1., eta = 1.):
+            temperature = torch.Tensor([1.0]),
+            eta = 1.,
+            c_phi = lambda x : torch.Tensor([0.0])):
 
     # sample gumbel
     gumbel_sample = log_class_weights + \
@@ -128,7 +151,8 @@ def rebar(conditional_loss_fun, log_class_weights,
     # get hard z
     _, z_sample = gumbel_sample.max(dim=-1)
     n_classes = log_class_weights.shape[1]
-    z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes); temperature = torch.clamp(temperature, 0.05, 5.0)
+    z_one_hot = get_one_hot_encoding_from_int(z_sample, n_classes)
+    temperature = torch.clamp(temperature, 0.05, 5.0)
 
     # get softmax z
     z_softmax = F.softmax(gumbel_sample / temperature[0], dim=-1)
@@ -146,11 +170,15 @@ def rebar(conditional_loss_fun, log_class_weights,
     f_z_softmax = conditional_loss_fun(z_softmax)
     f_z_cond_softmax = conditional_loss_fun(z_cond_softmax)
 
-    reinforce_term = (f_z_hard - eta * f_z_cond_softmax).detach() * \
+    # baseline terms
+    c_softmax = c_phi(z_softmax).squeeze()
+    c_cond_softmax = c_phi(z_cond_softmax).squeeze()
+
+    reinforce_term = (f_z_hard - eta * (f_z_cond_softmax - c_cond_softmax)).detach() * \
                         log_class_weights_i
 
     # correction term
-    correction_term = eta * f_z_softmax - eta * f_z_cond_softmax
+    correction_term = eta * (f_z_softmax - c_softmax) - eta * (f_z_cond_softmax - c_cond_softmax)
 
     return reinforce_term + correction_term + f_z_hard
 

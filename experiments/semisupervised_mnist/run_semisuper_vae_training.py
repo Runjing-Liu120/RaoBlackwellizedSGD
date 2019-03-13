@@ -153,9 +153,13 @@ elif args.grad_estimator == 'rebar':
     grad_estimator = bs_lib.rebar
     print('eta: ', args.rebar_eta)
     temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
+    c_phi = bs_lib.RELAXBaseline(10).to(device)
     grad_estimator_kwargs = {'temperature': temperature_param,
-                            'eta': args.rebar_eta}
-    bs_optimizer = optim.Adam([{'params': [temperature_param], 'lr':1e-2}])
+                            'eta': args.rebar_eta,
+                            'c_phi': c_phi}
+                            
+    bs_optimizer = optim.Adam([{'params': [temperature_param]},
+                            {'params': c_phi.parameters()}], lr = 1e-2)
 
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
