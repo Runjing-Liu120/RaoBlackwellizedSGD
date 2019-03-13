@@ -155,7 +155,7 @@ elif args.grad_estimator == 'rebar':
     temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
     grad_estimator_kwargs = {'temperature': temperature_param,
                             'eta': args.rebar_eta}
-    bs_optimizer = optim.Adam([{'params': [temperature_param], 'lr':1e-1}])
+    bs_optimizer = optim.Adam([{'params': [temperature_param], 'lr':1e-2}])
 
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
@@ -196,4 +196,4 @@ ss_lib.train_semisuper_vae(vae, classifier,
                 save_every = args.save_every,
                 print_every = args.print_every,
                 train_labeled_only = args.train_labeled_only,
-                bs_optimizer = bs_optimizer)
+                baseline_optimizer = bs_optimizer)

@@ -25,8 +25,8 @@ def get_class_label_cross_entropy(log_class_weights, labels):
 def get_reconstruction_loss(x_reconstructed, x):
     batch_size = x.shape[0]
 
-    bce_loss = -x * torch.log(x_reconstructed) - \
-                    (1 - x) * torch.log(1 - x_reconstructed)
+    bce_loss = -x * torch.log(x_reconstructed + 1e-8) - \
+                    (1 - x) * torch.log(1 - x_reconstructed + 1e-8)
 
     return bce_loss.view(batch_size, -1).sum(dim = 1)
     # return nn.BCELoss(reduce=False)(x_reconstructed, x).view(batch_size, -1).sum(dim = 1)
