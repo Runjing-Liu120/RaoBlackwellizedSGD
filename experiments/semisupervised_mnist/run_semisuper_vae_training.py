@@ -158,7 +158,7 @@ elif args.grad_estimator == 'rebar':
                             'relax_bs': relax_bs,
                 'relax_bs_optimizer':
                     optim.Adam([{'params': relax_bs.parameters()},
-                                {'params': [temperature_param], 'lr':1e-1}], )}
+                                {'params': [temperature_param], 'lr':1e-2}], )}
 
 elif args.grad_estimator == 'gumbel':
     grad_estimator = bs_lib.gumbel
