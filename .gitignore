@@ -7,3 +7,5 @@
 /mnist_data/
 sync_results*
 push_results*
+*.html
+*.Rhistory
