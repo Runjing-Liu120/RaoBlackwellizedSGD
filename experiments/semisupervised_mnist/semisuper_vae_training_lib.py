@@ -46,14 +46,14 @@ def get_supervised_loss(vae, classifier, labeled_image, true_labels):
     return labeled_loss + cross_entropy
 
 def eval_semisuper_vae(vae, classifier, loader_unlabeled,
-                            loader_labeled = [None],
-                            train = False, optimizer = None,
-                            topk = 0,
-                            grad_estimator = bs_lib.reinforce,
-                            grad_estimator_kwargs = {'grad_estimator_kwargs': None},
-                            n_samples = 1,
-                            train_labeled_only = False, epoch = 0,
-                            baseline_optimizer = None):
+                        loader_labeled = [None],
+                        train = False, optimizer = None,
+                        topk = 0,
+                        grad_estimator = bs_lib.reinforce,
+                        grad_estimator_kwargs = {'grad_estimator_kwargs': None},
+                        n_samples = 1,
+                        train_labeled_only = False, epoch = 0,
+                        baseline_optimizer = None):
 
     if train:
         assert optimizer is not None
@@ -78,7 +78,8 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
 
             # get labeled portion of loss
             supervised_loss = \
-                get_supervised_loss(vae, classifier, labeled_image, true_labels).sum()
+                get_supervised_loss(vae, classifier, labeled_image,
+                                                        true_labels).sum()
 
             num_labeled = len(loader_labeled.sampler)
             num_labeled_batch = labeled_image.shape[0]
@@ -102,15 +103,16 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             optimizer.zero_grad()
 
             # get unlabeled pseudoloss
-            f_z = lambda z : vae_utils.get_loss_from_one_hot_label(vae, unlabeled_image, z)
+            f_z = lambda z : vae_utils.get_loss_from_one_hot_label(vae,
+                                unlabeled_image, z)
             unlabeled_ps_loss = 0.0
             for i in range(n_samples):
                 unlabeled_ps_loss_ = rb_lib.get_raoblackwell_ps_loss(f_z, log_q,
-                                        topk = topk,
-                                        epoch = epoch,
-                                        data = unlabeled_image,
-                                        grad_estimator = grad_estimator,
-                                        grad_estimator_kwargs = grad_estimator_kwargs)
+                                topk = topk,
+                                epoch = epoch,
+                                data = unlabeled_image,
+                                grad_estimator = grad_estimator,
+                                grad_estimator_kwargs = grad_estimator_kwargs)
 
                 unlabeled_ps_loss += unlabeled_ps_loss_
 
@@ -132,7 +134,8 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
                 optimizer.zero_grad()
                 # for params in classifier.parameters():
                 baseline_optimizer.zero_grad()
-                loss_grads = grad(total_ps_loss, classifier.parameters(), create_graph=True)
+                loss_grads = grad(total_ps_loss, classifier.parameters(),
+                                    create_graph=True)
                 gn2 = sum([grd.norm()**2 for grd in loss_grads])
                 gn2.backward()
                 baseline_optimizer.step()

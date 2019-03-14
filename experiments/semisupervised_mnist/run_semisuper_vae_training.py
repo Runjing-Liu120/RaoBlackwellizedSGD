@@ -38,7 +38,7 @@ parser.add_argument('--n_samples', type = int, default = 1)
 
 parser.add_argument('--grad_estimator',
                     type=str, default='reinforce',
-                    help='type of gradient estimator. One of reinforce, reinforce_double_bs, ')
+                    help='type of gradient estimator. One of reinforce, reinforce_double_bs, relax, gumbel, nvil')
 
 # whether to only train on labeled data
 parser.add_argument('--train_labeled_only',
@@ -93,7 +93,8 @@ _ = torch.manual_seed(args.seed)
 # get data
 # train sets
 train_set_labeled, train_set_unlabeled, test_set = \
-        mnist_data_lib.get_mnist_dataset_semisupervised(data_dir = '../mnist_data/',
+        mnist_data_lib.get_mnist_dataset_semisupervised(
+                            data_dir = '../mnist_data/',
                             train_test_split_folder = '../test_train_splits/',
                             eval_test_set = args.eval_test_set)
 
@@ -146,9 +147,11 @@ optimizer = optim.Adam([
 bs_optimizer = None
 
 if args.grad_estimator == 'reinforce':
-    grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+    grad_estimator = bs_lib.reinforce
+    grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'reinforce_double_bs':
-    grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+    grad_estimator = bs_lib.reinforce_w_double_sample_baseline
+    grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'relax':
     grad_estimator = bs_lib.relax
     print('eta: ', args.rebar_eta)
@@ -167,7 +170,8 @@ elif args.grad_estimator == 'gumbel':
     grad_estimator_kwargs = {'annealing_fun': lambda t : \
                         np.maximum(0.5, \
                         np.exp(- args.gumbel_anneal_rate* float(t) * \
-                            len(train_loader_labeled.sampler) / args.batch_size)), 'straight_through': False}
+                    len(train_loader_labeled.sampler) / args.batch_size)),
+                    'straight_through': False}
 
 elif args.grad_estimator == 'nvil':
     grad_estimator = bs_lib.nvil
@@ -175,7 +179,7 @@ elif args.grad_estimator == 'nvil':
     grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
 
     optimizer = optim.Adam([
-                    {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},
+                    {'params': classifier.parameters(), 'lr': args.learning_rate},
                     {'params': vae.parameters(), 'lr': args.learning_rate},
                     {'params': baseline_nn.parameters(), 'lr': args.learning_rate}],
                     weight_decay=args.weight_decay)
