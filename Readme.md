@@ -7,7 +7,8 @@ https://arxiv.org/abs/1810.04777
 We wish to compute the gradient of an expectation
 over a discrete random variable that takes a finite or countably infinite sample space. Since the random variable is discrete, the usual reparameterization trick does not apply. 
 
-Many such stochastic gradient estimators have been proposed, such as RELAX [(Grathwohl et al., 2018)](https://arxiv.org/pdf/1711.00123.pdf), 
+Many alternative stochastic gradient estimators have been proposed for scenarios when the 
+reparameterization trick does not apply, such as RELAX [(Grathwohl et al., 2018)](https://arxiv.org/pdf/1711.00123.pdf), 
 REBAR [(Tucker et al., 2017)](https://arxiv.org/abs/1703.07370),
 NVIL [(Mnih & Gregor, 2014)](https://arxiv.org/abs/1402.0030), and Gumbel-softmax [(Jang et al., 2017)](https://arxiv.org/abs/1611.01144). 
 
@@ -15,7 +16,7 @@ In our paper, we describe a technique that can
 be applied to reduce the variance of any such
 estimator, without changing its bias. 
 
-Our idea is to analytically sum categories where the random variable has high probability and sample the remaining terms.
+In brief, idea is to analytically sum categories where the random variable has high probability and sample the remaining terms.
 
 If the random variable is concentrated around a few categories, then analytically summing the high probability categories nearly recovers the true gradient. This intuition is made precise using a **Rao-Blackwellization** argument. See our paper for more details. 
 
