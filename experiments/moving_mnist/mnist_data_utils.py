@@ -16,13 +16,7 @@ from torch.utils.data.sampler import Sampler
 def load_mnist_data(data_dir = '../mnist_data/', train = True):
     assert os.path.exists(data_dir)
 
-    # trans = transforms.Compose([transforms.ToTensor(),
-    #                             transforms.Normalize((0.5,), (1.0,))])
-
     trans = lambda x: transforms.ToTensor()(x).bernoulli()
-
-    # sigmoid = torch.nn.Sigmoid()
-    # trans = lambda x: (sigmoid(transforms.ToTensor()(x)) - 0.5) * 2
 
     data = dset.MNIST(root=data_dir, train=train,
                             transform=trans, download=True)
@@ -42,7 +36,8 @@ class MNISTDataSet(Dataset):
         assert os.path.exists(data_dir)
 
         # This is the full dataset
-        self.mnist_data_set = load_mnist_data(data_dir = data_dir, train = train_set)
+        self.mnist_data_set = load_mnist_data(data_dir = data_dir,
+                                            train = train_set)
 
         if train_set:
             n_image_full = len(self.mnist_data_set.train_labels)
@@ -52,7 +47,8 @@ class MNISTDataSet(Dataset):
         # we may wish to subset
         if indices is None:
             self.num_images = round(n_image_full * propn_sample)
-            self.sample_indx = np.random.choice(n_image_full, self.num_images, replace = False)
+            self.sample_indx = np.random.choice(n_image_full, self.num_images,
+                                                replace = False)
         else:
             self.num_images = len(indices)
             self.sample_indx = indices
@@ -164,7 +160,8 @@ class MovingMNISTDataSet(Dataset):
         assert os.path.exists(data_dir)
 
         # This is the full dataset
-        self.mnist_data_set = load_mnist_data(data_dir = data_dir, train = train_set)
+        self.mnist_data_set = load_mnist_data(data_dir = data_dir,
+                                                train = train_set)
 
         if train_set:
             n_image_full = len(self.mnist_data_set.train_labels)
@@ -174,7 +171,8 @@ class MovingMNISTDataSet(Dataset):
         # we may wish to subset
         if indices is None:
             self.num_images = round(n_image_full * propn_sample)
-            self.sample_indx = np.random.choice(n_image_full, self.num_images, replace = False)
+            self.sample_indx = np.random.choice(n_image_full, self.num_images,
+                                                replace = False)
         else:
             self.num_images = len(indices)
             self.sample_indx = indices

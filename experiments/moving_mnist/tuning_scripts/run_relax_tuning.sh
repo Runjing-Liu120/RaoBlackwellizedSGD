@@ -6,7 +6,7 @@ do
 					--epochs 20 \
 					--batch_size 64 \
 					--seed 901 \
-					--outdir '../mnist_vae_results_relax/tuning_results/'\
+					--outdir '../mnist_vae_results/tuning_results/'\
 					--outfilename moving_mnist_vae_rebar_lr${lr} \
 					--grad_estimator 'relax' \
 					--propn_sample 0.1 \

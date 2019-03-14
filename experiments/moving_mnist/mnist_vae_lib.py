@@ -175,7 +175,8 @@ class MovingHandwritingVAE(nn.Module):
         r0 = (self.full_slen - 1) / 2
         self.grid_out = \
             torch.FloatTensor(
-                np.mgrid[0:self.full_slen, 0:self.full_slen].transpose() - r0).to(device)
+                np.mgrid[0:self.full_slen, 0:self.full_slen].transpose() -
+                                            r0).to(device)
 
         # cache meshgrid required for cropping image
         r = self.mnist_slen // 2
@@ -183,7 +184,8 @@ class MovingHandwritingVAE(nn.Module):
                     np.mgrid[(-r):(r+1), (-r):(r+1)].transpose([2, 1, 0])).to(device)
 
         self.id_conv_weight = \
-            torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, self.mnist_slen).to(device)
+            torch.zeros(self.mnist_slen**2, 1, self.mnist_slen, \
+                                                self.mnist_slen).to(device)
         k = 0
         for i in range(self.mnist_slen):
             for j in range(self.mnist_slen):
@@ -232,9 +234,11 @@ class MovingHandwritingVAE(nn.Module):
         assert one_hot_pixel.shape[0] == batchsize
 
         attended_image = \
-            (self.id_conv_image * one_hot_pixel.unsqueeze(dim = 1)).sum(dim = 2)
+            (self.id_conv_image * \
+                    one_hot_pixel.unsqueeze(dim = 1)).sum(dim = 2)
 
-        return attended_image.view(batchsize, 1, self.mnist_slen, self.mnist_slen)
+        return attended_image.view(batchsize, 1, self.mnist_slen, \
+                                                    self.mnist_slen)
 
     def forward_cond_pixel_1d(self, one_hot_pixel, image):
         # image should be N x slen x slen
@@ -288,7 +292,8 @@ class MovingHandwritingVAE(nn.Module):
         kl_pixel_probs = (class_weights * log_class_weights).sum()
 
         self.cache_id_conv_image(image)
-        f_pixel = lambda i : self.get_loss_cond_pixel_1d(i, image, use_cached_image = True)
+        f_pixel = lambda i : self.get_loss_cond_pixel_1d(i, image, \
+                            use_cached_image = True)
 
         avg_pm_loss = 0.0
         # TODO: n_samples would be more elegant as an
@@ -304,7 +309,8 @@ class MovingHandwritingVAE(nn.Module):
             avg_pm_loss += pm_loss / n_samples
 
         map_locations = torch.argmax(log_class_weights.detach(), dim = 1)
-        one_hot_map_locations = get_one_hot_encoding_from_int(map_locations, self.full_slen**2)
+        one_hot_map_locations = get_one_hot_encoding_from_int(map_locations, \
+                                                            self.full_slen**2)
         map_cond_losses = f_pixel(one_hot_map_locations).sum()
 
         return avg_pm_loss + image.shape[0] * kl_pixel_probs, map_cond_losses

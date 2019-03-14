@@ -47,12 +47,12 @@ def eval_vae(vae, loader, \
             true_pixel_2d = None
 
         pm_loss, loss = vae.get_rb_loss(image,
-                                        topk = topk,
-                                        grad_estimator = grad_estimator,
-                                        grad_estimator_kwargs = grad_estimator_kwargs,
-                                        epoch = epoch,
-                                        n_samples = n_samples,
-                                        true_pixel_2d = true_pixel_2d)
+                                topk = topk,
+                                grad_estimator = grad_estimator,
+                                grad_estimator_kwargs = grad_estimator_kwargs,
+                                epoch = epoch,
+                                n_samples = n_samples,
+                                true_pixel_2d = true_pixel_2d)
 
         if train:
             pm_loss.backward(retain_graph = True)
@@ -111,11 +111,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
     print('  * init test recon loss: {:.10g};'.format(test_loss))
-    print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss / images_debugging.shape[0]))
-
-    # outfile_every = outfile + '_epoch' + str(0)
-    # print("writing the parameters to " + outfile_every + '\n')
-    # torch.save(vae.state_dict(), outfile_every)
+    print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss / \
+                                                    images_debugging.shape[0]))
 
     batch_losses.append(train_loss)
     train_losses.append(train_loss)
@@ -165,7 +162,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
             print('  * train recon loss: {:.10g};'.format(train_loss))
             print('  * test recon loss: {:.10g};'.format(test_loss))
-            print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss / images_debugging.shape[0]))
+            print('  * debugging_images loss: {:.10g};'.format(debugging_images_loss / \
+                                                    images_debugging.shape[0]))
 
             train_losses.append(train_loss)
             test_losses.append(test_loss)
