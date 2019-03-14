@@ -2,4 +2,8 @@
 *.ipynb_checkpoints*
 *.pyc
 *jupyter_sandbox*
-
+*deleteme*
+/mnist_vae_results/
+/mnist_data/
+sync_results*
+push_results*
