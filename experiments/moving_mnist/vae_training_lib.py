@@ -19,7 +19,8 @@ def eval_vae(vae, loader, \
                 set_true_loc = False,
                 topk = 0,
                 n_samples = 1,
-                epoch = 0):
+                epoch = 0,
+                baseline_optimizer = None):
     if train:
         vae.train()
         assert optimizer is not None
@@ -54,8 +55,19 @@ def eval_vae(vae, loader, \
                                         true_pixel_2d = true_pixel_2d)
 
         if train:
-            pm_loss.backward()
+            pm_loss.backward(retain_graph = True)
             optimizer.step()
+
+            if baseline_optimizer is not None:
+                # This is used for RELAX, where we have a learned
+                # baseline that needs to be optimized
+                optimizer.zero_grad()
+                baseline_optimizer.zero_grad()
+                loss_grads = grad(total_ps_loss, classifier.parameters(),
+                                    create_graph=True)
+                gn2 = sum([grd.norm()**2 for grd in loss_grads])
+                gn2.backward()
+                baseline_optimizer.step()
 
         avg_loss += loss.data  / num_images
 
@@ -68,7 +80,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
                     topk = 0,
                     n_samples = 1,
                     outfile = './mnist_vae_semisupervised',
-                    n_epoch = 200, print_every = 10, save_every = 20):
+                    n_epoch = 200, print_every = 10, save_every = 20,
+                    baseline_optimizer = None):
 
     batch_losses = []
     train_losses = []
@@ -83,12 +96,17 @@ def train_vae(vae, train_loader, test_loader, optimizer,
     np.save(outfile + 'images_debugging', images_debugging.cpu().numpy())
 
     # get losses
-    train_loss = eval_vae(vae, train_loader, grad_estimator, train = False,
+    train_loss = eval_vae(vae, train_loader, grad_estimator,
+                            grad_estimator_kwargs = grad_estimator_kwargs,
+                            train = False,
                             set_true_loc = set_true_loc)
-    test_loss = eval_vae(vae, test_loader, grad_estimator, train = False,
+    test_loss = eval_vae(vae, test_loader, grad_estimator,
+                            grad_estimator_kwargs = grad_estimator_kwargs,
+                            train = False,
                             set_true_loc = set_true_loc)
     _, debugging_images_loss = vae.get_rb_loss(images_debugging,
                                     grad_estimator,
+                                    grad_estimator_kwargs = grad_estimator_kwargs,
                                     n_samples = 0)
 
     print('  * init train recon loss: {:.10g};'.format(train_loss))
@@ -119,7 +137,8 @@ def train_vae(vae, train_loader, test_loader, optimizer,
                                 grad_estimator = grad_estimator,
                                 grad_estimator_kwargs = grad_estimator_kwargs,
                                 epoch = epoch,
-                                n_samples = n_samples)
+                                n_samples = n_samples,
+                                baseline_optimizer = None)
 
         elapsed = time.time() - t0
         print('[{}] unlabeled_loss: {:.10g}  \t[{:.1f} seconds]'.format(\
@@ -132,14 +151,17 @@ def train_vae(vae, train_loader, test_loader, optimizer,
 
         if epoch % print_every == 0:
             train_loss = eval_vae(vae, train_loader, grad_estimator,
-                                    train = False,
-                                    set_true_loc = set_true_loc)
+                                grad_estimator_kwargs = grad_estimator_kwargs,
+                                train = False,
+                                set_true_loc = set_true_loc)
             test_loss = eval_vae(vae, test_loader, grad_estimator,
-                                    train = False,
-                                    set_true_loc = set_true_loc)
+                                grad_estimator_kwargs = grad_estimator_kwargs,
+                                train = False,
+                                set_true_loc = set_true_loc)
             _, debugging_images_loss = vae.get_rb_loss(images_debugging,
-                                            grad_estimator,
-                                            n_samples = 0)
+                                grad_estimator,
+                                grad_estimator_kwargs = grad_estimator_kwargs,
+                                n_samples = 0)
 
             print('  * train recon loss: {:.10g};'.format(train_loss))
             print('  * test recon loss: {:.10g};'.format(test_loss))

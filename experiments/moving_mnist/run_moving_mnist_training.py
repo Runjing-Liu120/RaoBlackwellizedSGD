@@ -94,10 +94,6 @@ _ = torch.manual_seed(901)
 print('seed: ', args.seed)
 # LOAD DATA
 data_dir = '../mnist_data/'
-# propn_sample = args.propn_sample
-# train_set, test_set = \
-#     mnist_data_utils.get_moving_mnist_dataset(data_dir, propn_sample)
-
 
 train_set = mnist_data_utils.MovingMNISTDataSet(data_dir = data_dir,
                         indices = np.load('../train_indx.npy'),
@@ -152,14 +148,21 @@ print('lr: ', args.learning_rate)
 
 ### Gradient estimator
 if args.grad_estimator == 'reinforce':
-    grad_estimator = bs_lib.reinforce; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+    grad_estimator = bs_lib.reinforce
+    grad_estimator_kwargs = {'grad_estimator_kwargs': None}
 elif args.grad_estimator == 'reinforce_double_bs':
-    grad_estimator = bs_lib.reinforce_w_double_sample_baseline; grad_estimator_kwargs = {'grad_estimator_kwargs': None}
-elif args.grad_estimator == 'rebar':
-    print('rebar eta: ', args.rebar_eta)
-    grad_estimator = bs_lib.rebar
-    grad_estimator_kwargs = {'temperature': 0.1,
-                            'eta': args.rebar_eta}
+    grad_estimator = bs_lib.reinforce_w_double_sample_baseline
+    grad_estimator_kwargs = {'grad_estimator_kwargs': None}
+elif args.grad_estimator == 'relax':
+    grad_estimator = bs_lib.relax
+    temperature_param = torch.Tensor([1]).to(device).requires_grad_(True)
+    c_phi = bs_lib.RELAXBaseline(68**2).to(device)
+    grad_estimator_kwargs = {'temperature': temperature_param,
+                            'eta': args.rebar_eta,
+                            'c_phi': c_phi}
+    bs_optimizer = optim.Adam([{'params': [temperature_param]},
+                            {'params': c_phi.parameters()}], lr = 1e-2)
+
 elif args.grad_estimator == 'gumbel':
     print('gumbel anneal rate: ', args.gumbel_anneal_rate)
     grad_estimator = bs_lib.gumbel
@@ -172,8 +175,7 @@ elif args.grad_estimator == 'gumbel':
 
 elif args.grad_estimator == 'nvil':
     grad_estimator = bs_lib.nvil
-    baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1]); #baseline_nn.load_state_dict(torch.load('../mnist_vae_results/baseline_nn_warmstart',
-                                   # map_location=lambda storage, loc: storage))
+    baseline_nn = bs_lib.BaselineNN(slen = train_set[0]['image'].shape[-1]);
     grad_estimator_kwargs = {'baseline_nn': baseline_nn.to(device)}
 
     optimizer = optim.Adam([
@@ -212,7 +214,8 @@ vae_training_lib.train_vae(vae, train_loader, test_loader, optimizer,
                 outfile = outfile,
                 n_epoch = args.epochs,
                 print_every = args.print_every,
-                save_every = args.save_every)
+                save_every = args.save_every,
+                baseline_optimizer = bs_optimizer)
 
 
 print('done. Total time: {}secs'.format(time.time() - t0_train))

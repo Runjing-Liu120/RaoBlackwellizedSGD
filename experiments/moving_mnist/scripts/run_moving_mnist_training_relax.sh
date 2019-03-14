@@ -7,9 +7,9 @@ do
 				--epochs 50 \
 				--batch_size 64 \
 				--seed $seed \
-				--outdir '../mnist_vae_results/'\
-				--outfilename moving_mnist_vae_rebar_trial${i} \
-				--grad_estimator 'rebar' \
+				--outdir '../mnist_vae_results_relax/'\
+				--outfilename moving_mnist_vae_relax_trial${i} \
+				--grad_estimator 'relax' \
 				--rebar_eta 0.4 \
 				--propn_sample 0.1 \
 				--learning_rate 5e-4 \
