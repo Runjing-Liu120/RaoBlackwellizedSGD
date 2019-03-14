@@ -16,7 +16,7 @@ In our paper, we describe a technique that can
 be applied to reduce the variance of any such
 estimator, without changing its bias. 
 
-Our idea is to analytically sum categories where the random variable has high probability and sample the remaining terms.
+In brief, idea is to analytically sum categories where the random variable has high probability and sample the remaining terms.
 
 If the random variable is concentrated around a few categories, then analytically summing the high probability categories nearly recovers the true gradient. This intuition is made precise using a **Rao-Blackwellization** argument. See our paper for more details. 
 
