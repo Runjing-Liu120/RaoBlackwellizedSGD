@@ -29,11 +29,17 @@ def get_bernoulli_log_prob(e_b, draw):
 # class to run Bernoulli Experiments
 class BernoulliExperiments(object):
     def __init__(self, p0, dim, phi0):
+        # the target vector inside the expectation
         self.p0 = p0
+
+        # dimension of the Bernoulli random variable
         self.dim = dim
 
+        # define and cache the 2**d categories
         self.set_draw_array()
 
+        # the variational parameter is just the probability of
+        # the Bernoulli random variable
         self.var_params = {'phi': deepcopy(phi0)}
 
     def set_var_params(self, phi):
@@ -50,8 +56,8 @@ class BernoulliExperiments(object):
             i += 1
 
     def f_z(self, i):
-        draw = (self.draw_array * i).sum(dim = 1)
         # returns the loss for the ith entry in draw array
+        draw = (self.draw_array * i).sum(dim = 1)
         return torch.Tensor([torch.sum((draw - self.p0) ** 2)])
 
     def get_log_q(self):
@@ -66,16 +72,10 @@ class BernoulliExperiments(object):
 
         return log_probs
 
-    def get_bernoulli_prob_vec(self):
-        # returns a vector of probabilities for all the possible draws
-        return torch.exp(self.get_bernoulli_log_prob_vec())
-
-    def get_bernoulli_log_prob_i(self, i):
-        # returns the log probabilities for draw i
-        e_b = sigmoid(self.var_params['phi'])
-        return get_bernoulli_log_prob(e_b, self.draw_array[i])
-
     def get_pm_loss(self, topk, grad_estimator, n_samples = 1):
+        # returns the pseudo-loss: when backwards is called, this returns
+        # an estimate of the gradient.
+
         log_q = self.get_log_q()
 
         pm_loss = 0.0
@@ -86,6 +86,7 @@ class BernoulliExperiments(object):
         return pm_loss / n_samples
 
     def get_full_loss(self):
+        # return the loss, fully marginalizing the discrete random variable
         log_q = self.get_log_q()
         class_weights = torch.exp(log_q)
         return rb_lib.get_full_loss(self.f_z, class_weights)
@@ -96,7 +97,7 @@ def sample_bern_gradient(phi0, bern_experiment, topk,
                             n_samples = 10000):
     # repeatedly compute the gradient for the Bernoulli experiment
     # return an array of samples
-    
+
     params = [phi0]
     optimizer = optim.SGD(params, lr = 1.0)
 
