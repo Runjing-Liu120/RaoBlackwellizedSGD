@@ -138,7 +138,6 @@ if args.use_classifier_init:
 vae.to(device)
 classifier.to(device)
 
-
 # set up optimizer
 optimizer = optim.Adam([
                 {'params': classifier.parameters(), 'lr': args.learning_rate}, #1e-3},

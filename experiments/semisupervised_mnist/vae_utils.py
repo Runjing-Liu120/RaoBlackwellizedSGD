@@ -15,7 +15,6 @@ from common_utils import get_one_hot_encoding_from_int
 def get_class_label_cross_entropy(log_class_weights, labels):
         assert np.all(log_class_weights.detach().cpu().numpy() <= 0)
         assert log_class_weights.shape[0] == len(labels)
-        # assert log_class_weights.shape[1] == self.n_classes
         n_classes = log_class_weights.shape[1]
 
         return torch.sum(
@@ -29,7 +28,6 @@ def get_reconstruction_loss(x_reconstructed, x):
                     (1 - x) * torch.log(1 - x_reconstructed + 1e-8)
 
     return bce_loss.view(batch_size, -1).sum(dim = 1)
-    # return nn.BCELoss(reduce=False)(x_reconstructed, x).view(batch_size, -1).sum(dim = 1)
 
 def get_kl_divergence_loss(mean, logvar):
     batch_size = mean.shape[0]

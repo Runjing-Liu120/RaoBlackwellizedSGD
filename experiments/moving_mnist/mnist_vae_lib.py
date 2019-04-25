@@ -296,8 +296,6 @@ class MovingHandwritingVAE(nn.Module):
                             use_cached_image = True)
 
         avg_pm_loss = 0.0
-        # TODO: n_samples would be more elegant as an
-        # argument to get_partial_marginal_loss
         for k in range(n_samples):
             pm_loss = rb_lib.get_raoblackwell_ps_loss(f_pixel,
                                         log_class_weights, topk,

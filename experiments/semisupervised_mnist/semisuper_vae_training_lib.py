@@ -1,3 +1,6 @@
+# this library contains the functions to evaluate the loss to train a
+# semi-supervised VAE
+
 import torch
 from torch import optim
 from torch.autograd import grad
@@ -18,7 +21,6 @@ import baselines_lib as bs_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
 def get_correct_classifier(image, true_labels, n_classes, fudge_factor = 1e-12):
     # for debugging only: returns q with mass on the correct label
 
@@ -32,7 +34,7 @@ def get_correct_classifier(image, true_labels, n_classes, fudge_factor = 1e-12):
     return torch.log(q).to(device)
 
 def get_supervised_loss(vae, classifier, labeled_image, true_labels):
-    # get labeled loss
+    # get loss on a batch of labeled images
     labeled_loss = \
         vae_utils.get_labeled_loss(vae, labeled_image, true_labels)
 
@@ -76,7 +78,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             labeled_image = labeled_data['image'].to(device)
             true_labels = labeled_data['label'].to(device)
 
-            # get labeled portion of loss
+            # get loss on labeled images
             supervised_loss = \
                 get_supervised_loss(vae, classifier, labeled_image,
                                                         true_labels).sum()
@@ -102,7 +104,8 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             # flush gradients
             optimizer.zero_grad()
 
-            # get unlabeled pseudoloss
+            # get unlabeled pseudoloss: here we use our
+            # Rao-Blackwellization or some other gradient estimator
             f_z = lambda z : vae_utils.get_loss_from_one_hot_label(vae,
                                 unlabeled_image, z)
             unlabeled_ps_loss = 0.0
@@ -130,6 +133,7 @@ def eval_semisuper_vae(vae, classifier, loader_unlabeled,
             optimizer.step()
 
             if baseline_optimizer is not None:
+                # for RELAX: as it trains to minimize a control variate
                 # flush gradients
                 optimizer.zero_grad()
                 # for params in classifier.parameters():

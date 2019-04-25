@@ -64,10 +64,7 @@ class MLPEncoder(nn.Module):
 
 class Classifier(nn.Module):
     def __init__(self, slen = 28, n_classes = 10):
-        """
-        Single hidden layer classifier
-        with softmax output.
-        """
+
         super(Classifier, self).__init__()
 
         self.slen = slen
