@@ -21,7 +21,7 @@ def run_SGD(get_loss, params,
         ps_loss.backward() returns an estimate of the gradient.
         in general, ps_loss might not equal the actual loss.
     params : dictionary
-        Dictionary of parameters to optimize
+        Dictionary containing parameters to optimize
     lr : float
         Learning rate of SGD
     n_steps : int

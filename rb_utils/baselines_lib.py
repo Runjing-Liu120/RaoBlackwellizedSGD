@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 
 from torch.distributions import Categorical
-from common_utils import get_one_hot_encoding_from_int
+from common_utils import get_one_hot_encoding_from_int, sample_class_weights
 
 import torch.nn.functional as F
 
@@ -16,12 +16,6 @@ import gumbel_softmax_lib
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def sample_class_weights(class_weights):
-    # draw a sample from Categorical variable with
-    # probabilities class_weights
-
-    cat_rv = Categorical(probs = class_weights)
-    return cat_rv.sample().detach()
 
 def get_reinforce_grad_sample(conditional_loss, log_class_weights,
                                 baseline = 0.0):
@@ -29,7 +23,6 @@ def get_reinforce_grad_sample(conditional_loss, log_class_weights,
     assert len(conditional_loss) == len(log_class_weights)
 
     return (conditional_loss - baseline).detach() * log_class_weights
-
 
 
 """
@@ -55,18 +48,19 @@ seq_tensor : torch.Tensor
 z_sample : torch.Tensor
     The cateories (not one-hot-encoded) at which to evaluate the ps loss.
 epoch : int
-    The epoch of the optimizer
+    The epoch of the optimizer (for Gumbel-softmax, which has an annealing rate)
 data : torch.Tensor
-    The data at which we evaluate the loss
+    The data at which we evaluate the loss (for NVIl and RELAX, which have
+    a data dependent baseline)
 grad_estimator_kwargs : dict
     Additional arguments to the gradient estimators
 
 Returns
 -------
 ps_loss :
-a value such that ps_loss.backward() returns an
-estimate of the gradient.
-In general, ps_loss might not equal the actual loss.
+    a value such that ps_loss.backward() returns an
+    estimate of the gradient.
+    In general, ps_loss might not equal the actual loss.
 """
 
 def reinforce(conditional_loss_fun, log_class_weights,
@@ -96,6 +90,9 @@ def reinforce_w_double_sample_baseline(\
             class_weights_detached, seq_tensor, z_sample,
             epoch, data,
             grad_estimator_kwargs = None):
+    # This is what we call REINFORCE+ in our paper,
+    # where we use a second, independent sample from the discrete distribution
+    # to use as a baseline
 
     assert len(z_sample) == log_class_weights.shape[0]
 

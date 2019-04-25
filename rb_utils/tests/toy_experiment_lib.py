@@ -3,6 +3,9 @@ import rao_blackwellization_lib as rb_lib
 
 from copy import deepcopy
 
+# on a toy experiment similar to the
+# Bernoulli example in our paper, that we use to check gradients
+
 class ToyExperiment(object):
     def __init__(self, eta, p0):
         # number of categories

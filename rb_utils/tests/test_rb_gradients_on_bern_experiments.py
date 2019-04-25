@@ -21,6 +21,9 @@ from copy import deepcopy
 np.random.seed(24524)
 
 class TestBernoulliGradients(unittest.TestCase):
+    # on the Bernoulli example in our paper,
+    # check that our Rao-Blackwellization method
+    # returns an unbiased estimate of the true gradient
     def set_params(self):
         # fixed parameters
         d = 3
@@ -34,7 +37,7 @@ class TestBernoulliGradients(unittest.TestCase):
         params = [phi0]
         optimizer = optim.SGD(params, lr = 1.0)
 
-        # the class
+        # the class for the experiment
         bern_experiment = bern_lib.BernoulliExperiments(p0, d, phi0)
         bern_experiment.set_var_params(deepcopy(phi0))
 
@@ -50,7 +53,8 @@ class TestBernoulliGradients(unittest.TestCase):
         true_grad = deepcopy(bern_experiment.var_params['phi'].grad)
         print('true_grad', true_grad.numpy())
 
-        # analytically integrate reinforce gradient
+        # analytically integrate reinforce gradient,
+        # check it returns the true gradient
         bern_experiment.set_var_params(deepcopy(phi0))
         optimizer.zero_grad()
         ps_loss = bern_experiment.get_pm_loss(topk = 8,

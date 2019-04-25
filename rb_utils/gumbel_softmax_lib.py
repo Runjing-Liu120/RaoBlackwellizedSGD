@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# These gumbel functions are taken from
+# The following three functions for gumbel-softmax are taken from
 # https://gist.github.com/yzh119/fd2146d2aeb329d067568a493b20172f
 
 def sample_gumbel(shape, eps=1e-20):
@@ -42,7 +42,7 @@ def gumbel_softmax_conditional_sample(logits, temperature, one_hot_z,
 
     if detach:
         logits = logits.detach()
-        
+
     gumbel_conditional_sample = \
         -torch.log(-log_U_k + \
                 -log_U / (torch.exp(logits) + eps) * (1 - one_hot_z))

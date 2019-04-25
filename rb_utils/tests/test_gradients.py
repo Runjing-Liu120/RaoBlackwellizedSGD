@@ -29,7 +29,10 @@ def assert_close(x, y, tol):
     diff = np.abs(x - y)
     assert diff < tol, 'difference = {}, tolerance = {}'.format(diff, tol)
 
-class TestRB(unittest.TestCase):
+class TestGrads(unittest.TestCase):
+    # on a toy experiment (see toy_experiment_lib.py) similar to the
+    # Bernoulli example in our paper, check that each gradient
+    # estimator is unbiased
     def get_params_get_true_grad(self):
         # fixed parameters
         k = 5
@@ -78,7 +81,6 @@ class TestRB(unittest.TestCase):
                  3 * torch.std(reinforce_grads) / np.sqrt(n_samples))
     def test_reinforce_bs(self):
         # add a simple baseline to reinforce
-        # assert it is unbiased
 
         k, eta, toy_experiment, true_grad = self.get_params_get_true_grad()
 
@@ -86,6 +88,8 @@ class TestRB(unittest.TestCase):
 
         reinforce_cv_grads = torch.zeros(n_samples)
 
+        # sample reinforce estimator with a baseline
+        # check it is unbiased for the true gradient
         for i in range(n_samples):
             toy_experiment.set_parameter(eta)
             pm_loss = toy_experiment.get_pm_loss(
@@ -102,7 +106,7 @@ class TestRB(unittest.TestCase):
     def test_rb_reinforce(self):
         k, eta, toy_experiment, true_grad = self.get_params_get_true_grad()
 
-        # assert our rao blackwellization returns an unbiased gradient
+        # check our rao blackwellization returns an unbiased gradient
         n_samples = 10000
 
         reinforce_rb_grads = torch.zeros(n_samples)
@@ -122,7 +126,7 @@ class TestRB(unittest.TestCase):
     def test_rebar(self):
         k, eta, toy_experiment, true_grad = self.get_params_get_true_grad()
 
-        # sample rebar gradient estimator, assert it is unbiased
+        # sample rebar gradient estimator, check it is unbiased
         n_samples = 10000
         rebar_grads = torch.zeros(n_samples)
         rebar_pm_losses = torch.zeros(n_samples)
@@ -149,7 +153,7 @@ class TestRB(unittest.TestCase):
         nvil_grads = torch.zeros(n_samples)
 
         baseline_nn = bs_lib.BaselineNN(slen = 5)
-
+        # sample NVIL gradient estimator, check it is unbiased
         for i in range(n_samples):
             toy_experiment.set_parameter(eta)
             pm_loss = toy_experiment.get_pm_loss(

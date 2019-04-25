@@ -1,4 +1,6 @@
 import torch
+from torch.distributions import Categorical
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def get_one_hot_encoding_from_int(z, n_classes):
@@ -11,8 +13,6 @@ def get_one_hot_encoding_from_int(z, n_classes):
         Tensor with integers corresponding to categories
     n_classes : Int
         The total number of categories
-    lr : float
-        Learning rate of SGD
 
     Returns
     ----------
@@ -25,3 +25,15 @@ def get_one_hot_encoding_from_int(z, n_classes):
     z_one_hot = z_one_hot.view(len(z), n_classes)
 
     return z_one_hot
+
+def sample_class_weights(class_weights):
+    """
+    draw a sample from Categorical variable with
+    probabilities class_weights
+    """
+
+    # draw a sample from Categorical variable with
+    # probabilities class_weights
+
+    cat_rv = Categorical(probs = class_weights)
+    return cat_rv.sample().detach()

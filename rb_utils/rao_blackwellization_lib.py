@@ -2,8 +2,7 @@ import numpy as np
 
 import torch
 
-from common_utils import get_one_hot_encoding_from_int
-from baselines_lib import sample_class_weights
+from common_utils import get_one_hot_encoding_from_int, sample_class_weights
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -17,14 +16,16 @@ def get_concentrated_mask(class_weights, topk):
     ----------
     class_weights : torch.Tensor
         Array of class weights, with each row corresponding to a datapoint,
-        each column corresponding to its weight
+        each column corresponding to the probability of the datapoint
+        belonging to that category
     topk : int
         the k in top-k
-    
+
     Returns
     -------
     mask_topk : torch.Tensor
-        Boolean array with entry 1 if the corresponding class weight is
+        Boolean array, same dimension as class_weights,
+        with entry 1 if the corresponding class weight is
         in the topk for that observation
     topk_domain: torch.LongTensor
         Array specifying the indices of class_weights that correspond to
@@ -106,6 +107,18 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
         See baselines_lib for details.
     grad_estimator_kwargs : dict
         keyword arguments to gradient estimator
+    epoch : int
+        The epoch of the optimizer (for Gumbel-softmax, which has an annealing rate)
+    data : torch.Tensor
+        The data at which we evaluate the loss (for NVIl and RELAX, which have
+        a data dependent baseline)
+
+    Returns
+    -------
+    ps_loss :
+        a value such that ps_loss.backward() returns an
+        estimate of the gradient.
+        In general, ps_loss might not equal the actual loss.
     """
 
     # class weights from the variational distribution
@@ -146,19 +159,14 @@ def get_raoblackwell_ps_loss(conditional_loss_fun, log_class_weights, topk,
 
     if not(topk == class_weights.shape[1]):
         # if we didn't sum everything
-        # we sample the remaining terms
+        # we sample from the remaining terms
 
         # class weights conditioned on being in the diffuse set
         conditional_class_weights = (class_weights + 1e-12) * \
                     (1 - concentrated_mask)  / (sampled_weight + 1e-12)
-        # assert not np.any(np.isnan(conditional_class_weights))
 
         # sample from conditional distribution
         conditional_z_sample = sample_class_weights(conditional_class_weights)
-
-        # just for my own sanity ... check we actually sampled from diffuse set
-        assert np.all((1 - concentrated_mask)[seq_tensor, conditional_z_sample].cpu().numpy() == 1.), \
-                    'sampled_weight {}'.format(sampled_weight)
 
         grad_sampled = grad_estimator(conditional_loss_fun, log_class_weights,
                                 class_weights, seq_tensor,
